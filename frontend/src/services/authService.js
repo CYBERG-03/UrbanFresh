@@ -1,10 +1,11 @@
 /**
  * Service Layer – Axios calls for authentication endpoints.
  * Centralizes all auth API interactions; keeps components free of HTTP logic.
+ * Uses the shared api instance for consistent interceptor behavior.
  */
-import axios from 'axios';
+import api from './api';
 
-const API_BASE = 'http://localhost:8080/api/auth';
+const AUTH_PATH = '/api/auth';
 
 /**
  * Register a new customer account.
@@ -13,7 +14,7 @@ const API_BASE = 'http://localhost:8080/api/auth';
  * @throws axios error with response.data containing field errors or message
  */
 export const registerCustomer = (data) =>
-  axios.post(`${API_BASE}/register`, data);
+  api.post(`${AUTH_PATH}/register`, data);
 
 /**
  * Authenticate a user and receive a JWT token.
@@ -22,5 +23,5 @@ export const registerCustomer = (data) =>
  * @throws axios error with response.data containing error message (401/400)
  */
 export const loginUser = (data) =>
-  axios.post(`${API_BASE}/login`, data);
+  api.post(`${AUTH_PATH}/login`, data);
 

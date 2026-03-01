@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { isTokenExpired, msUntilExpiry } from '../utils/tokenUtils';
+import { setExpireSessionCallback } from '../services/api';
 
 /**
  * Context Layer – Manages authentication state across the app.
@@ -68,6 +69,12 @@ export function AuthProvider({ children }) {
   const clearSessionExpired = useCallback(() => {
     setSessionExpired(false);
   }, []);
+
+  // Wire the 401 interceptor callback so api.js can trigger session expiry
+  useEffect(() => {
+    setExpireSessionCallback(expireSession);
+    return () => setExpireSessionCallback(null);
+  }, [expireSession]);
 
   /**
    * Start (or restart) the auto-logout timer based on the token's exp claim.

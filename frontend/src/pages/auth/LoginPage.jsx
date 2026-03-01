@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { loginUser } from '../../services/authService';
 import { useAuth } from '../../context/AuthContext';
@@ -8,6 +8,7 @@ import { useAuth } from '../../context/AuthContext';
  * Presentation Layer – Login form.
  * Authenticates the user via POST /api/auth/login,
  * stores the JWT via AuthContext, and redirects based on role.
+ * Shows a session-expired banner when redirected with ?expired=true.
  */
 
 /** Map backend role to the correct dashboard path. */
@@ -20,7 +21,17 @@ const ROLE_DASHBOARD = {
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const [searchParams] = useSearchParams();
+  const { login, sessionExpired, clearSessionExpired } = useAuth();
+  const [showExpiredBanner, setShowExpiredBanner] = useState(false);
+
+  // Show session-expired banner when redirected from ProtectedRoute or auto-expiry
+  useEffect(() => {
+    if (sessionExpired || searchParams.get('expired') === 'true') {
+      setShowExpiredBanner(true);
+      clearSessionExpired();
+    }
+  }, [sessionExpired, searchParams, clearSessionExpired]);
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -50,6 +61,7 @@ export default function LoginPage() {
       // Store token and user info in AuthContext + localStorage
       login(data.token, { email: data.email, name: data.name, role: data.role });
 
+      setShowExpiredBanner(false);
       toast.success(`Welcome back, ${data.name}!`);
 
       // Redirect to role-specific dashboard
@@ -80,6 +92,13 @@ export default function LoginPage() {
           <h1 className="text-3xl font-bold text-green-700">UrbanFresh</h1>
           <p className="text-gray-500 text-sm mt-1">Sign in to your account</p>
         </div>
+
+        {/* Session expired banner */}
+        {showExpiredBanner && (
+          <div className="mb-4 p-3 bg-amber-50 border border-amber-300 rounded-lg text-amber-700 text-sm text-center">
+            Your session has expired. Please sign in again.
+          </div>
+        )}
 
         {/* Global error message */}
         {error && (
