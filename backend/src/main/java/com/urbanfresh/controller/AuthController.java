@@ -7,7 +7,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.urbanfresh.dto.request.LoginRequest;
 import com.urbanfresh.dto.request.RegisterRequest;
+import com.urbanfresh.dto.response.LoginResponse;
 import com.urbanfresh.dto.response.RegisterResponse;
 import com.urbanfresh.service.AuthService;
 
@@ -35,5 +37,17 @@ public class AuthController {
     public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
         RegisterResponse response = authService.registerCustomer(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * Authenticate a user and return a JWT token.
+     *
+     * @param request validated login credentials (email, password)
+     * @return 200 OK with JWT token and user info
+     */
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        LoginResponse response = authService.login(request);
+        return ResponseEntity.ok(response);
     }
 }

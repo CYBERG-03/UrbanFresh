@@ -1,6 +1,8 @@
 package com.urbanfresh.service;
 
+import com.urbanfresh.dto.request.LoginRequest;
 import com.urbanfresh.dto.request.RegisterRequest;
+import com.urbanfresh.dto.response.LoginResponse;
 import com.urbanfresh.dto.response.RegisterResponse;
 
 /**
@@ -17,4 +19,13 @@ public interface AuthService {
      * @throws com.urbanfresh.exception.DuplicateEmailException if email is taken
      */
     RegisterResponse registerCustomer(RegisterRequest request);
+
+    /**
+     * Authenticate a user and issue a JWT token.
+     *
+     * @param request validated login credentials (email + password)
+     * @return response with JWT token and user info
+     * @throws com.urbanfresh.exception.InvalidCredentialsException if credentials are wrong
+     */
+    LoginResponse login(LoginRequest request);
 }
