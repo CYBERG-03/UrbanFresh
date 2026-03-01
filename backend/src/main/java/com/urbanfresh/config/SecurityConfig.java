@@ -1,5 +1,7 @@
 package com.urbanfresh.config;
 
+import com.urbanfresh.security.JwtAuthFilter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -9,15 +11,19 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
  * Config Layer – Spring Security configuration.
- * Defines password encoding, session policy, and endpoint access rules.
- * Stateless (JWT-ready) — no server-side sessions.
+ * Defines password encoding, session policy, endpoint access rules,
+ * and registers the JWT authentication filter.
  */
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+    private final JwtAuthFilter jwtAuthFilter;
 
     /**
      * BCrypt encoder used by AuthService to hash passwords.
@@ -29,10 +35,11 @@ public class SecurityConfig {
 
     /**
      * Security filter chain:
-     * - Stateless sessions (JWT will manage auth in later sprints)
+     * - Stateless sessions (no server-side sessions)
      * - CSRF disabled (not needed for stateless REST APIs)
      * - Public access to /api/auth/** endpoints
-     * - All other endpoints require authentication
+     * - All other endpoints require a valid JWT
+     * - JwtAuthFilter runs before UsernamePasswordAuthenticationFilter
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -45,7 +52,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/auth/**").permitAll()
                         .anyRequest().authenticated()
-                );
+                )
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

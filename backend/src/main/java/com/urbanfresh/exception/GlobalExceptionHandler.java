@@ -53,6 +53,20 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Handle invalid login credentials → 401 Unauthorized.
+     */
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidCredentials(InvalidCredentialsException ex) {
+        ApiErrorResponse response = ApiErrorResponse.builder()
+                .status(HttpStatus.UNAUTHORIZED.value())
+                .message(ex.getMessage())
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+    }
+
+    /**
      * Catch-all for unexpected errors → 500 Internal Server Error.
      * Logs the actual exception but returns a generic message to the client.
      */

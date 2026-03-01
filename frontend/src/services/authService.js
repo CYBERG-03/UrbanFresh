@@ -14,3 +14,13 @@ const API_BASE = 'http://localhost:8080/api/auth';
  */
 export const registerCustomer = (data) =>
   axios.post(`${API_BASE}/register`, data);
+
+/**
+ * Authenticate a user and receive a JWT token.
+ * @param {object} data - { email, password }
+ * @returns {Promise} resolved with { token, email, name, role, message }
+ * @throws axios error with response.data containing error message (401/400)
+ */
+export const loginUser = (data) =>
+  axios.post(`${API_BASE}/login`, data);
+
