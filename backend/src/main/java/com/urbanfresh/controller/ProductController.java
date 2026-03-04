@@ -91,34 +91,3 @@ public class ProductController {
         return ResponseEntity.ok(productService.getCategories());
     }
 }
-
-
-    private final ProductService productService;
-
-    /**
-     * Returns all products flagged as featured.
-     * GET /api/products/featured
-     *
-     * @return 200 with list of featured products (empty array when none exist)
-     */
-    @GetMapping("/featured")
-    public ResponseEntity<List<ProductResponse>> getFeaturedProducts() {
-        return ResponseEntity.ok(productService.getFeaturedProducts());
-    }
-
-    /**
-     * Returns in-stock products expiring within a configurable look-ahead window.
-     * GET /api/products/near-expiry?days=7
-     *
-     * @param days number of days ahead to look (default 7, clamped to 1–30)
-     * @return 200 with near-expiry products ordered by earliest expiry date first
-     */
-    @GetMapping("/near-expiry")
-    public ResponseEntity<List<ProductResponse>> getNearExpiryProducts(
-            @RequestParam(defaultValue = "7") int days) {
-
-        // Clamp to a safe range to prevent accidental full-table scans on bad input
-        int safeDays = Math.max(1, Math.min(days, 30));
-        return ResponseEntity.ok(productService.getNearExpiryProducts(safeDays));
-    }
-}
