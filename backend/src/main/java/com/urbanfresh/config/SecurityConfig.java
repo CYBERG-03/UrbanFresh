@@ -69,6 +69,8 @@ public class SecurityConfig {
                         // Product listing, search, and category filter are public
                         .requestMatchers(HttpMethod.GET, "/api/products").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/categories").permitAll()
+                        // Product detail page is public — any visitor can view a single product
+                        .requestMatchers(HttpMethod.GET, "/api/products/*").permitAll()
                         // Role-based URL-level restrictions (first line of defence)
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/supplier/**").hasRole("SUPPLIER")

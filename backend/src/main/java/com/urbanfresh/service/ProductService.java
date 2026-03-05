@@ -47,4 +47,14 @@ public interface ProductService {
      * @return sorted list of category strings (empty list when none exist)
      */
     List<String> getCategories();
+
+    /**
+     * Returns a single product by its primary-key ID.
+     * Used by the product detail page.
+     *
+     * @param id product identifier
+     * @return the matching ProductResponse
+     * @throws com.urbanfresh.exception.ProductNotFoundException when no product exists with that id
+     */
+    ProductResponse getProductById(Long id);
 }
