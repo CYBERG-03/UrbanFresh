@@ -12,6 +12,7 @@ import org.springframework.util.StringUtils;
 
 import com.urbanfresh.dto.response.ProductPageResponse;
 import com.urbanfresh.dto.response.ProductResponse;
+import com.urbanfresh.exception.ProductNotFoundException;
 import com.urbanfresh.model.Product;
 import com.urbanfresh.repository.ProductRepository;
 import com.urbanfresh.service.ProductService;
@@ -101,6 +102,20 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public List<String> getCategories() {
         return productRepository.findAllCategories();
+    }
+
+    /**
+     * Fetches a single product by ID and maps it to a ProductResponse.
+     * Throws ProductNotFoundException (-> 404) when the ID does not exist.
+     *
+     * @param id product primary key
+     * @return ProductResponse for the found product
+     */
+    @Override
+    public ProductResponse getProductById(Long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ProductNotFoundException(id));
+        return toResponse(product);
     }
 
     /**
