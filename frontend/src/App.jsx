@@ -6,6 +6,7 @@ import LandingPage from './pages/landing/LandingPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import LoginPage from './pages/auth/LoginPage';
 import ProductListingPage from './pages/products/ProductListingPage';
+import ProductDetailPage from './pages/products/ProductDetailPage';
 import CustomerDashboard from './pages/customer/CustomerDashboard';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProductsPage from './pages/admin/AdminProductsPage';
@@ -28,6 +29,7 @@ function App() {
           {/* ── Public routes ── */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/products" element={<ProductListingPage />} />
+          <Route path="/products/:id" element={<ProductDetailPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/unauthorized" element={<UnauthorizedPage />} />

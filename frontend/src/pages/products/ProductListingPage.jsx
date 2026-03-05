@@ -201,12 +201,15 @@ function ProductCard({ product }) {
     : false;
 
   return (
-    <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
+    <Link
+      to={`/products/${product.id}`}
+      className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col group"
+    >
       {product.imageUrl ? (
         <img
           src={product.imageUrl}
           alt={product.name}
-          className="w-full h-44 object-cover"
+          className="w-full h-44 object-cover group-hover:opacity-95 transition-opacity"
         />
       ) : (
         <div className="w-full h-44 bg-green-100 flex items-center justify-center text-green-400 text-4xl">
@@ -242,7 +245,7 @@ function ProductCard({ product }) {
           )}
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 
