@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { getProducts, getCategories } from '../../services/productService';
 import Navbar from '../../components/Navbar';
+import { formatPrice } from '../../utils/priceUtils';
 
 /**
  * Page Layer – Public product listing page.
@@ -232,7 +233,7 @@ function ProductCard({ product }) {
 
         <div className="mt-auto space-y-1">
           <div className="flex items-center justify-between">
-            <span className="text-green-700 font-bold">${Number(product.price).toFixed(2)}</span>
+            <span className="text-green-700 font-bold">{formatPrice(product.price, product.unit)}</span>
             {!product.inStock && (
               <span className="text-xs text-red-500 font-medium">Out of stock</span>
             )}

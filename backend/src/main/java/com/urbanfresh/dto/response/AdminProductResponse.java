@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import com.urbanfresh.model.PricingUnit;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -26,6 +27,7 @@ public class AdminProductResponse {
     private String name;
     private String description;
     private BigDecimal price;
+    private PricingUnit unit;
     private String category;
     private String imageUrl;
     private boolean featured;

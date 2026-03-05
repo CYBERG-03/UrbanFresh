@@ -3,6 +3,7 @@ package com.urbanfresh.dto.response;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import com.urbanfresh.model.PricingUnit;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -25,6 +26,7 @@ public class ProductResponse {
     private String name;
     private String description;
     private BigDecimal price;
+    private PricingUnit unit;
     private String category;
     private String imageUrl;
     private boolean featured;

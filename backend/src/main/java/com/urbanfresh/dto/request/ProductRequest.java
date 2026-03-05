@@ -3,6 +3,7 @@ package com.urbanfresh.dto.request;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import com.urbanfresh.model.PricingUnit;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -39,6 +40,12 @@ public class ProductRequest {
 
     /** Whether this product is promoted in the landing page featured section. */
     private boolean featured;
+
+    /**
+     * Pricing unit for this product.
+     * Defaults to PER_ITEM when omitted so existing API clients remain compatible.
+     */
+    private PricingUnit unit = PricingUnit.PER_ITEM;
 
     /** Null for non-perishable products; must not be in the past when provided. */
     private LocalDate expiryDate;

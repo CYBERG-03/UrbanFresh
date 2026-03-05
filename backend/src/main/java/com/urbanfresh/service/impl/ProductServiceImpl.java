@@ -147,6 +147,7 @@ public class ProductServiceImpl implements ProductService {
                 .name(product.getName())
                 .description(product.getDescription())
                 .price(product.getPrice())
+                .unit(product.getUnit())
                 .category(product.getCategory())
                 .imageUrl(product.getImageUrl())
                 .featured(product.isFeatured())

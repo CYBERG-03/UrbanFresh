@@ -22,6 +22,7 @@ export default function ProductFormModal({ product, onSubmit, onClose, loading }
     description: '',
     price: '',
     category: '',
+    unit: 'PER_ITEM',
     imageUrl: '',
     featured: false,
     expiryDate: '',
@@ -43,6 +44,7 @@ export default function ProductFormModal({ product, onSubmit, onClose, loading }
         description: product.description ?? '',
         price: product.price ?? '',
         category: product.category ?? '',
+        unit: product.unit ?? 'PER_ITEM',
         imageUrl: product.imageUrl ?? '',
         featured: product.featured ?? false,
         expiryDate: product.expiryDate ?? '',
@@ -102,8 +104,7 @@ export default function ProductFormModal({ product, onSubmit, onClose, loading }
       name: form.name.trim(),
       description: form.description.trim() || null,
       price: parseFloat(form.price),
-      category: form.category.trim() || null,
-      imageUrl: resolvedImageUrl,
+      category: form.category.trim() || null,      unit: form.unit || 'PER_ITEM',      imageUrl: resolvedImageUrl,
       featured: form.featured,
       // Send null for empty expiry so backend treats it as no expiry
       expiryDate: form.expiryDate || null,
@@ -147,7 +148,7 @@ export default function ProductFormModal({ product, onSubmit, onClose, loading }
 
           {/* Price + Stock — side by side */}
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Price (USD) *">
+            <Field label="Price (LKR) *">
               <input
                 name="price"
                 type="number"
@@ -185,6 +186,22 @@ export default function ProductFormModal({ product, onSubmit, onClose, loading }
               className={inputCls}
               placeholder="e.g. Dairy"
             />
+          </Field>
+
+          {/* Pricing Unit */}
+          <Field label="Pricing Unit">
+            <select
+              name="unit"
+              value={form.unit}
+              onChange={handleChange}
+              className={inputCls}
+            >
+              <option value="PER_ITEM">Per Item</option>
+              <option value="PER_KG">Per kg</option>
+              <option value="PER_G">Per g</option>
+              <option value="PER_L">Per L</option>
+              <option value="PER_ML">Per ml</option>
+            </select>
           </Field>
 
           {/* Image Upload */}
