@@ -8,6 +8,7 @@ import {
   deleteProduct,
 } from '../../services/adminProductService';
 import ProductFormModal from '../../components/admin/ProductFormModal';
+import { formatPrice } from '../../utils/priceUtils';
 
 /**
  * Presentation Layer – Admin product management page.
@@ -151,6 +152,7 @@ export default function AdminProductsPage() {
                   <th className={th}>Name</th>
                   <th className={th}>Category</th>
                   <th className={th}>Price</th>
+                  <th className={th}>Unit</th>
                   <th className={th}>Stock</th>
                   <th className={th}>Featured</th>
                   <th className={th}>Expiry</th>
@@ -160,7 +162,7 @@ export default function AdminProductsPage() {
               <tbody>
                 {pageData.content?.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-10 text-center text-gray-400">
+                    <td colSpan={8} className="py-10 text-center text-gray-400">
                       No products found. Add one to get started.
                     </td>
                   </tr>
@@ -171,7 +173,8 @@ export default function AdminProductsPage() {
                         <span className="font-medium text-gray-800">{p.name}</span>
                       </td>
                       <td className={td}>{p.category ?? '—'}</td>
-                      <td className={td}>${parseFloat(p.price).toFixed(2)}</td>
+                      <td className={td}>{formatPrice(p.price, p.unit)}</td>
+                      <td className={td}>{UNIT_DISPLAY[p.unit] ?? p.unit ?? '—'}</td>
                       <td className={td}>
                         <span
                           className={
@@ -258,3 +261,11 @@ export default function AdminProductsPage() {
 
 const th = 'px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide';
 const td = 'px-4 py-3 text-gray-700';
+
+const UNIT_DISPLAY = {
+  PER_ITEM: 'per item',
+  PER_KG:   'per kg',
+  PER_G:    'per g',
+  PER_L:    'per L',
+  PER_ML:   'per ml',
+};

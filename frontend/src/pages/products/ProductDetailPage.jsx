@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getProductById } from '../../services/productService';
 import Navbar from '../../components/Navbar';
+import { formatPrice } from '../../utils/priceUtils';
 
 /**
  * Page Layer – Public product detail page.
@@ -133,7 +134,7 @@ function ProductDetail({ product }) {
         <h1 className="text-2xl font-bold text-gray-800">{product.name}</h1>
 
         <p className="text-3xl font-bold text-green-700">
-          ${Number(product.price).toFixed(2)}
+          {formatPrice(product.price, product.unit)}
         </p>
 
         {/* Near-expiry notice — surfaces discount opportunity and urgency */}

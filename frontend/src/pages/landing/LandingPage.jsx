@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { getFeaturedProducts, getNearExpiryProducts } from '../../services/productService';
 import Navbar from '../../components/Navbar';
 import { useAuth } from '../../context/AuthContext';
+import { formatPrice } from '../../utils/priceUtils';
 
 /**
  * Page Layer – Public landing page for UrbanFresh.
@@ -144,7 +145,10 @@ export default function LandingPage() {
  */
 function ProductCard({ product, showExpiry = false }) {
   return (
-    <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
+    <Link
+      to={`/products/${product.id}`}
+      className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col"
+    >
       {/* Product image or placeholder */}
       {product.imageUrl ? (
         <img
@@ -172,7 +176,7 @@ function ProductCard({ product, showExpiry = false }) {
         )}
 
         <div className="mt-auto flex items-center justify-between">
-          <span className="text-green-700 font-bold">${Number(product.price).toFixed(2)}</span>
+          <span className="text-green-700 font-bold">{formatPrice(product.price, product.unit)}</span>
           {!product.inStock && (
             <span className="text-xs text-red-500 font-medium">Out of stock</span>
           )}
@@ -185,7 +189,7 @@ function ProductCard({ product, showExpiry = false }) {
           </div>
         )}
       </div>
-    </div>
+    </Link>
   );
 }
 

@@ -1,4 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { uploadProductImage } from '../../services/adminProductService';
+
+const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 
 /**
  * Presentation Layer – Reusable modal form for creating and editing a product.
@@ -18,11 +22,19 @@ export default function ProductFormModal({ product, onSubmit, onClose, loading }
     description: '',
     price: '',
     category: '',
+    unit: 'PER_ITEM',
     imageUrl: '',
     featured: false,
     expiryDate: '',
     stockQuantity: '',
   });
+
+  // Image upload state
+  const [imagePreview, setImagePreview] = useState(null);
+  const [imageFile, setImageFile]       = useState(null);
+  const [uploadError, setUploadError]   = useState('');
+  const [isDragging, setIsDragging]     = useState(false);
+  const fileInputRef = useRef(null);
 
   // Pre-fill form when editing an existing product
   useEffect(() => {
@@ -32,11 +44,14 @@ export default function ProductFormModal({ product, onSubmit, onClose, loading }
         description: product.description ?? '',
         price: product.price ?? '',
         category: product.category ?? '',
+        unit: product.unit ?? 'PER_ITEM',
         imageUrl: product.imageUrl ?? '',
         featured: product.featured ?? false,
         expiryDate: product.expiryDate ?? '',
         stockQuantity: product.stockQuantity ?? '',
       });
+      // Show existing URL as preview (backwards-compatible)
+      if (product.imageUrl) setImagePreview(product.imageUrl);
     }
   }, [product, isEdit]);
 
@@ -48,14 +63,48 @@ export default function ProductFormModal({ product, onSubmit, onClose, loading }
     }));
   };
 
-  const handleSubmit = (e) => {
+  // ── Image upload helpers ──────────────────────────────────────────────────
+  const validateAndSetFile = (file) => {
+    setUploadError('');
+    if (!ACCEPTED_TYPES.includes(file.type)) {
+      setUploadError('Unsupported format. Use JPG, PNG, or WebP.');
+      return;
+    }
+    if (file.size > MAX_BYTES) {
+      setUploadError('File exceeds the 5 MB limit.');
+      return;
+    }
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleFileInput  = (e) => { const f = e.target.files?.[0]; if (f) validateAndSetFile(f); };
+  const handleDrop       = (e) => { e.preventDefault(); setIsDragging(false); const f = e.dataTransfer.files?.[0]; if (f) validateAndSetFile(f); };
+  const handleDragOver   = (e) => { e.preventDefault(); setIsDragging(true); };
+  const handleDragLeave  = ()  => setIsDragging(false);
+  // ─────────────────────────────────────────────────────────────────────────
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setUploadError('');
+
+    let resolvedImageUrl = form.imageUrl.trim() || null;
+
+    if (imageFile) {
+      try {
+        const { url } = await uploadProductImage(imageFile);
+        resolvedImageUrl = url;
+      } catch {
+        setUploadError('Image upload failed. Please try again.');
+        return;
+      }
+    }
+
     onSubmit({
       name: form.name.trim(),
       description: form.description.trim() || null,
       price: parseFloat(form.price),
-      category: form.category.trim() || null,
-      imageUrl: form.imageUrl.trim() || null,
+      category: form.category.trim() || null,      unit: form.unit || 'PER_ITEM',      imageUrl: resolvedImageUrl,
       featured: form.featured,
       // Send null for empty expiry so backend treats it as no expiry
       expiryDate: form.expiryDate || null,
@@ -64,14 +113,19 @@ export default function ProductFormModal({ product, onSubmit, onClose, loading }
   };
 
   return (
-    /* Backdrop */
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl p-6">
-        <h2 className="text-lg font-bold text-gray-800 mb-4">
-          {isEdit ? 'Edit Product' : 'Add Product'}
-        </h2>
+    /* Backdrop — overflowY so the whole overlay scrolls on very short screens */
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 px-4 py-6 overflow-y-auto">
+      <div className="w-full max-w-lg bg-white rounded-2xl shadow-xl flex flex-col max-h-[90vh] my-auto">
+        {/* Sticky header */}
+        <div className="px-6 pt-6 pb-2 flex-shrink-0">
+          <h2 className="text-lg font-bold text-gray-800">
+            {isEdit ? 'Edit Product' : 'Add Product'}
+          </h2>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Scrollable form body */}
+        <div className="overflow-y-auto px-6 pb-2 flex-1">
+        <form id="product-form" onSubmit={handleSubmit} className="space-y-4">
           {/* Name */}
           <Field label="Name *">
             <input
@@ -99,7 +153,7 @@ export default function ProductFormModal({ product, onSubmit, onClose, loading }
 
           {/* Price + Stock — side by side */}
           <div className="grid grid-cols-2 gap-4">
-            <Field label="Price (USD) *">
+            <Field label="Price (LKR) *">
               <input
                 name="price"
                 type="number"
@@ -139,16 +193,90 @@ export default function ProductFormModal({ product, onSubmit, onClose, loading }
             />
           </Field>
 
-          {/* Image URL */}
-          <Field label="Image URL">
-            <input
-              name="imageUrl"
-              value={form.imageUrl}
+          {/* Pricing Unit */}
+          <Field label="Pricing Unit">
+            <select
+              name="unit"
+              value={form.unit}
               onChange={handleChange}
-              maxLength={500}
               className={inputCls}
-              placeholder="https://..."
-            />
+            >
+              <option value="PER_ITEM">Per Item</option>
+              <option value="PER_KG">Per kg</option>
+              <option value="PER_G">Per g</option>
+              <option value="PER_L">Per L</option>
+              <option value="PER_ML">Per ml</option>
+            </select>
+          </Field>
+
+          {/* Image Upload */}
+          <Field label="Product Image">
+            <div
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onClick={() => fileInputRef.current?.click()}
+              className={`relative flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-lg p-4 cursor-pointer transition-colors ${
+                isDragging
+                  ? 'border-green-500 bg-green-50'
+                  : 'border-gray-300 hover:border-green-400 hover:bg-gray-50'
+              }`}
+            >
+              {imagePreview ? (
+                <img
+                  src={imagePreview}
+                  alt="Product preview"
+                  className="h-32 w-auto rounded object-cover"
+                />
+              ) : (
+                <>
+                  <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                      d="M3 16.5V19a1 1 0 001 1h16a1 1 0 001-1v-2.5M16 9l-4-4m0 0L8 9m4-4v12" />
+                  </svg>
+                  <p className="text-xs text-gray-500 text-center">
+                    Drag &amp; drop an image here, or{' '}
+                    <span className="text-green-600 font-medium">click to browse</span>
+                  </p>
+                  <p className="text-xs text-gray-400">JPG, PNG, WebP · max 5 MB</p>
+                </>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={handleFileInput}
+              />
+            </div>
+
+            {imagePreview && (
+              <div className="flex gap-3 mt-1">
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                  className="text-xs text-green-600 hover:underline"
+                >
+                  Change image
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setImagePreview(null);
+                    setImageFile(null);
+                    setForm((prev) => ({ ...prev, imageUrl: '' }));
+                  }}
+                  className="text-xs text-red-500 hover:underline"
+                >
+                  Remove
+                </button>
+              </div>
+            )}
+
+            {uploadError && (
+              <p className="text-xs text-red-600 mt-1">{uploadError}</p>
+            )}
           </Field>
 
           {/* Expiry Date */}
@@ -177,7 +305,7 @@ export default function ProductFormModal({ product, onSubmit, onClose, loading }
           </label>
 
           {/* Actions */}
-          <div className="flex justify-end gap-3 pt-2">
+          <div className="flex justify-end gap-3 pt-2 pb-4">
             <button
               type="button"
               onClick={onClose}
@@ -195,6 +323,7 @@ export default function ProductFormModal({ product, onSubmit, onClose, loading }
             </button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );

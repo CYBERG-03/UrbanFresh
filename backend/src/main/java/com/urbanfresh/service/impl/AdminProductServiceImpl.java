@@ -63,6 +63,7 @@ public class AdminProductServiceImpl implements AdminProductService {
                 .name(request.getName())
                 .description(request.getDescription())
                 .price(request.getPrice())
+                .unit(request.getUnit() != null ? request.getUnit() : com.urbanfresh.model.PricingUnit.PER_ITEM)
                 .category(request.getCategory())
                 .imageUrl(request.getImageUrl())
                 .featured(request.isFeatured())
@@ -88,6 +89,7 @@ public class AdminProductServiceImpl implements AdminProductService {
         product.setName(request.getName());
         product.setDescription(request.getDescription());
         product.setPrice(request.getPrice());
+        product.setUnit(request.getUnit() != null ? request.getUnit() : com.urbanfresh.model.PricingUnit.PER_ITEM);
         product.setCategory(request.getCategory());
         product.setImageUrl(request.getImageUrl());
         product.setFeatured(request.isFeatured());
@@ -124,6 +126,7 @@ public class AdminProductServiceImpl implements AdminProductService {
                 .name(product.getName())
                 .description(product.getDescription())
                 .price(product.getPrice())
+                .unit(product.getUnit())
                 .category(product.getCategory())
                 .imageUrl(product.getImageUrl())
                 .featured(product.isFeatured())
