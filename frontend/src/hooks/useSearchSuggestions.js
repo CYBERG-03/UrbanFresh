@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getProductSuggestions } from '../services/productService';
 
 /**
@@ -20,25 +20,49 @@ import { getProductSuggestions } from '../services/productService';
  */
 export default function useSearchSuggestions(query, delay = 300) {
   const [fetchedSuggestions, setFetchedSuggestions] = useState([]);
+  // Monotonic id to identify the latest outstanding request. Incrementing
+  // on every query change lets us ignore out-of-order responses.
+  const latestRequestId = useRef(0);
 
   useEffect(() => {
     const trimmed = query.trim();
+
+    // Immediately clear stale suggestions when the query changes so the UI
+    // doesn't show results for a previous query while the new one is debouncing.
+    setFetchedSuggestions([]);
+
     // Do not fetch for very short queries — results would be too broad
     if (trimmed.length < 2) return;
 
+    // Mark a new logical request. We capture the id for this timer so that
+    // when the network response arrives we can ignore it if a newer query
+    // was issued in the meantime.
+    const requestId = ++latestRequestId.current;
+
     const timer = setTimeout(() => {
-      // setState is called inside an async callback, not in the effect body itself
       getProductSuggestions(trimmed)
-        .then(setFetchedSuggestions)
-        .catch(() => setFetchedSuggestions([]));
+        .then((results) => {
+          // Only apply results when this response matches the most recent
+          // request id — otherwise it's stale and must be ignored.
+          if (requestId === latestRequestId.current) {
+            setFetchedSuggestions(results);
+          }
+        })
+        .catch(() => {
+          if (requestId === latestRequestId.current) {
+            setFetchedSuggestions([]);
+          }
+        });
     }, delay);
 
     // Cancel the pending timer when the query changes before the delay fires
-    return () => clearTimeout(timer);
+    // and advance the request id so any in-flight response will be ignored.
+    return () => {
+      clearTimeout(timer);
+      latestRequestId.current++;
+    };
   }, [query, delay]);
 
-  // Suppress stale results inline when the query is too short to have fetched.
-  // This avoids calling setState in the effect body just to clear state.
   const trimmed = query.trim();
   return { suggestions: trimmed.length >= 2 ? fetchedSuggestions : [] };
 }
