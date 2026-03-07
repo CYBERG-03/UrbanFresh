@@ -72,8 +72,7 @@ public class OrderServiceImpl implements OrderService {
 
         for (OrderItemRequest item : request.getItems()) {
             Product product = productRepository.findByIdWithLock(item.getProductId())
-                    .orElseThrow(() -> new ProductNotFoundException(
-                            "Product not found with id: " + item.getProductId()));
+                    .orElseThrow(() -> new ProductNotFoundException(item.getProductId()));
 
             if (product.getStockQuantity() < item.getQuantity()) {
                 stockErrors.add(String.format(
