@@ -1,6 +1,7 @@
 package com.urbanfresh.service.impl;
 
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -102,6 +103,23 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public List<String> getCategories() {
         return productRepository.findAllCategories();
+    }
+
+    /**
+     * Returns up to 8 product name suggestions for the autocomplete dropdown.
+     * Returns an empty list immediately when the query is blank or fewer than 2 characters
+     * to avoid unnecessary DB round-trips on single-character input.
+     *
+     * @param query partial product name from the user's search input
+     * @return list of up to 8 matching product name strings
+     */
+    @Override
+    public List<String> getProductSuggestions(String query) {
+        if (!StringUtils.hasText(query) || query.trim().length() < 2) {
+            return Collections.emptyList();
+        }
+        Pageable limit = PageRequest.of(0, 8);
+        return productRepository.findNameSuggestions(query.trim(), limit);
     }
 
     /**

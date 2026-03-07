@@ -49,6 +49,16 @@ public interface ProductService {
     List<String> getCategories();
 
     /**
+     * Returns up to 8 product name suggestions matching the given query string.
+     * Used by the lightweight autocomplete endpoint; searches name only for speed.
+     * Returns an empty list when the query is blank or shorter than 2 characters.
+     *
+     * @param query the partial product name typed by the user
+     * @return list of matching product name strings (max 8)
+     */
+    List<String> getProductSuggestions(String query);
+
+    /**
      * Returns a single product by its primary-key ID.
      * Used by the product detail page.
      *

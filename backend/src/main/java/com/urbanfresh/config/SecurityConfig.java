@@ -1,9 +1,5 @@
 package com.urbanfresh.config;
 
-import com.urbanfresh.security.JwtAuthFilter;
-import com.urbanfresh.security.JwtAuthEntryPoint;
-import com.urbanfresh.security.RoleAccessDeniedHandler;
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -15,6 +11,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import com.urbanfresh.security.JwtAuthEntryPoint;
+import com.urbanfresh.security.JwtAuthFilter;
+import com.urbanfresh.security.RoleAccessDeniedHandler;
+
+import lombok.RequiredArgsConstructor;
 
 /**
  * Config Layer – Spring Security configuration.
@@ -69,6 +71,8 @@ public class SecurityConfig {
                         // Product listing, search, and category filter are public
                         .requestMatchers(HttpMethod.GET, "/api/products").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/products/categories").permitAll()
+                        // Lightweight autocomplete suggestions — public, no auth required
+                        .requestMatchers(HttpMethod.GET, "/api/products/suggestions").permitAll()
                         // Product detail page is public — any visitor can view a single product
                         .requestMatchers(HttpMethod.GET, "/api/products/*").permitAll()
                         // Uploaded product images are public static assets

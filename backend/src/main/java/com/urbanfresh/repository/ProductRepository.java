@@ -49,6 +49,20 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<String> findAllCategories();
 
     /**
+     * Returns up to {@code pageable.getPageSize()} product names whose name contains the
+     * given query string (case-insensitive). Used by the lightweight autocomplete endpoint.
+     * Searching by name only (not description) keeps suggestions fast and relevant.
+     *
+     * @param query    substring to match in product name
+     * @param pageable page request used purely to cap result size (e.g. PageRequest.of(0, 8))
+     * @return list of matching product name strings
+     */
+    @Query("SELECT p.name FROM Product p " +
+           "WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "ORDER BY p.name ASC")
+    List<String> findNameSuggestions(@Param("query") String query, Pageable pageable);
+
+    /**
      * Retrieves all products marked as featured (featured = true).
      * Used by the landing page "Featured Products" section.
      *
