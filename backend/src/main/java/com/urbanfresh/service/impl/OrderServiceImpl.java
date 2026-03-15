@@ -51,6 +51,9 @@ import lombok.RequiredArgsConstructor;
 public class OrderServiceImpl implements OrderService {
 
         private static final int MAX_PAGE_SIZE = 100;
+        private static final String ADMIN_ALLOWED_STATUS_LABELS = "PENDING, PROCESSING, READY, CANCELLED";
+        private static final String FULL_STATUS_LABELS =
+                        "PENDING, PROCESSING, READY, CANCELLED, OUT_FOR_DELIVERY, DELIVERED, RETURNED";
 
         private static final Set<OrderStatus> ADMIN_MANAGEABLE_CURRENT_STATUSES = Set.of(
                         OrderStatus.PENDING,
@@ -268,13 +271,13 @@ public class OrderServiceImpl implements OrderService {
                 } catch (IllegalArgumentException ex) {
                         throw new InvalidOrderStatusTransitionException(
                                         "Invalid order status '" + request.getStatus() +
-                                                        "'. Allowed values: PENDING, PROCESSING, READY, CANCELLED, OUT_FOR_DELIVERY, DELIVERED, RETURNED."
+                                                        "'. Allowed values: " + FULL_STATUS_LABELS + "."
                         );
                 }
 
                 if (!ADMIN_ALLOWED_TARGET_STATUSES.contains(targetStatus)) {
                         throw new InvalidOrderStatusTransitionException(
-                                        "Admins can only set statuses: PENDING, PROCESSING, READY, CANCELLED."
+                                        "Admins can only set statuses: " + ADMIN_ALLOWED_STATUS_LABELS + "."
                         );
                 }
 
@@ -417,6 +420,8 @@ public class OrderServiceImpl implements OrderService {
                                 .map(AdminOrderReviewResponse.OrderItemInfo::getSubtotal)
                                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+                // Payment/tax modules are not integrated yet; keep explicit zero values
+                // so the review response remains schema-stable for current frontend screens.
                 BigDecimal discounts = BigDecimal.ZERO;
                 BigDecimal taxes = BigDecimal.ZERO;
                 BigDecimal shippingCost = BigDecimal.ZERO;
@@ -452,6 +457,8 @@ public class OrderServiceImpl implements OrderService {
                                                 .shippingCost(shippingCost)
                                                 .finalTotal(order.getTotalAmount())
                                                 .build())
+                                // Payment details are currently unavailable until payment integration
+                                // persists method/reference metadata on orders or a payment ledger.
                                 .payment(AdminOrderReviewResponse.PaymentInfo.builder()
                                                 .paymentMethod(null)
                                                 .paymentStatus(resolvePersistedPaymentStatus(order))

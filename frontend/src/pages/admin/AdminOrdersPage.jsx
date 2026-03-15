@@ -6,6 +6,8 @@ import { formatAmount } from '../../utils/priceUtils';
 import OrderStatusCorrectionModal from '../../components/admin/OrderStatusCorrectionModal';
 import OrderReviewModal from '../../components/admin/OrderReviewModal';
 
+const PAGE_SIZE = 20;
+
 /**
  * Presentation Layer – Admin order management page.
  * Displays a paginated order table and allows order status updates.
@@ -30,7 +32,7 @@ export default function AdminOrdersPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await getAllOrders(page, 20);
+      const data = await getAllOrders(page, PAGE_SIZE);
       setPageData(data);
     } catch {
       setError('Failed to load orders. Please try again.');
@@ -196,23 +198,23 @@ export default function AdminOrdersPage() {
                 </tr>
               </thead>
               <tbody>
-                {pageData.content?.length === 0 ? (
+                {(pageData.content ?? []).length === 0 ? (
                   <tr>
                     <td colSpan={7} className="py-10 text-center text-gray-400">
                       No orders found.
                     </td>
                   </tr>
                 ) : (
-                  pageData.content?.map((order) => (
+                  (pageData.content ?? []).map((order) => (
                     <tr key={order.orderId} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className={td}>#{order.orderId}</td>
-                      <td className={td}>{order.customerName}</td>
-                      <td className={td}>{formatAmount(order.totalAmount)}</td>
+                      <td className={td}>{order.customerName ?? '—'}</td>
+                      <td className={td}>{formatAmount(order.totalAmount ?? 0)}</td>
                       <td className={td}>
-                        <span className={paymentBadgeClass(order.paymentStatus)}>{order.paymentStatus}</span>
+                        <span className={paymentBadgeClass(order.paymentStatus)}>{order.paymentStatus ?? 'PENDING'}</span>
                       </td>
                       <td className={td}>
-                        <span className={orderBadgeClass(order.orderStatus)}>{order.orderStatus}</span>
+                        <span className={orderBadgeClass(order.orderStatus)}>{order.orderStatus ?? 'PENDING'}</span>
                       </td>
                       <td className={td}>{formatDate(order.orderDate)}</td>
                       <td className={td}>

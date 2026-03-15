@@ -4,11 +4,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
@@ -70,5 +72,30 @@ class AdminOrderSecurityTest {
     void getOrderReview_returnsForbidden_forNonAdminUser() throws Exception {
         mockMvc.perform(get("/api/admin/orders/1"))
                 .andExpect(status().isForbidden());
+    }
+
+    /**
+     * Ensures non-admin users cannot update admin-managed order status.
+     *
+     * @throws Exception when request execution fails
+     */
+    @Test
+    @WithMockUser(roles = "CUSTOMER")
+    void updateOrderStatus_returnsForbidden_forNonAdminUser() throws Exception {
+        mockMvc.perform(patch("/api/admin/orders/1/status")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"READY\"}"))
+                .andExpect(status().isForbidden());
+    }
+
+    /**
+     * Ensures unauthenticated requests to admin order APIs are rejected.
+     *
+     * @throws Exception when request execution fails
+     */
+    @Test
+    void getOrders_returnsUnauthorized_forAnonymousUser() throws Exception {
+        mockMvc.perform(get("/api/admin/orders"))
+                .andExpect(status().isUnauthorized());
     }
 }

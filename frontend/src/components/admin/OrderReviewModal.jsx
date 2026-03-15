@@ -9,6 +9,9 @@ export default function OrderReviewModal({ isOpen, loading, order, onClose }) {
     return null;
   }
 
+  const orderItems = order?.items ?? [];
+  const statusHistory = order?.statusHistory ?? [];
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
       <div className="max-h-[90vh] w-full max-w-5xl overflow-hidden rounded-2xl bg-white shadow-xl">
@@ -76,14 +79,14 @@ export default function OrderReviewModal({ isOpen, loading, order, onClose }) {
                       </tr>
                     </thead>
                     <tbody>
-                      {(order.items ?? []).length === 0 ? (
+                      {orderItems.length === 0 ? (
                         <tr>
                           <td colSpan={5} className="px-4 py-6 text-center text-gray-400">
                             No order items found.
                           </td>
                         </tr>
                       ) : (
-                        (order.items ?? []).map((item, index) => (
+                        orderItems.map((item, index) => (
                           <tr key={`${item.productId ?? 'na'}-${index}`} className="border-b border-gray-100">
                             <td className={td}>{item.productName ?? '—'}</td>
                             <td className={td}>
@@ -97,7 +100,7 @@ export default function OrderReviewModal({ isOpen, loading, order, onClose }) {
                                 <span className="text-xs text-gray-400">No image</span>
                               )}
                             </td>
-                            <td className={td}>{item.quantity}</td>
+                            <td className={td}>{item.quantity ?? '—'}</td>
                             <td className={td}>{formatAmount(item.unitPrice ?? 0)}</td>
                             <td className={td}>{formatAmount(item.subtotal ?? 0)}</td>
                           </tr>
@@ -138,7 +141,7 @@ export default function OrderReviewModal({ isOpen, loading, order, onClose }) {
 
               <section className="rounded-xl border border-gray-200 p-4">
                 <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500">Status History</h3>
-                {(order.statusHistory ?? []).length === 0 ? (
+                {statusHistory.length === 0 ? (
                   <p className="text-sm text-gray-500">No status history is available for this order yet.</p>
                 ) : (
                   <div className="overflow-x-auto">
@@ -153,7 +156,7 @@ export default function OrderReviewModal({ isOpen, loading, order, onClose }) {
                         </tr>
                       </thead>
                       <tbody>
-                        {(order.statusHistory ?? []).map((entry, index) => (
+                        {statusHistory.map((entry, index) => (
                           <tr
                             key={`${entry.changedAt ?? 'na'}-${entry.previousStatus ?? 'na'}-${entry.newStatus ?? 'na'}-${index}`}
                             className="border-b border-gray-100"
@@ -179,10 +182,12 @@ export default function OrderReviewModal({ isOpen, loading, order, onClose }) {
 }
 
 function Field({ label, value, inline = false }) {
+  const displayValue = value === null || value === undefined || value === '' ? '—' : value;
+
   return (
     <div className={inline ? 'flex items-start justify-between gap-3' : ''}>
       <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{label}</p>
-      <p className="text-sm text-gray-800">{value || '—'}</p>
+      <p className="text-sm text-gray-800">{displayValue}</p>
     </div>
   );
 }
