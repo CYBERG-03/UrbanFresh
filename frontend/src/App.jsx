@@ -11,6 +11,7 @@ import ProductListingPage from './pages/products/ProductListingPage';
 import ProductDetailPage from './pages/products/ProductDetailPage';
 import CustomerDashboard from './pages/customer/CustomerDashboard';
 import ProfilePage from './pages/customer/ProfilePage';
+import PaymentResultPage from './pages/customer/PaymentResultPage';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProductsPage from './pages/admin/AdminProductsPage';
 import AdminInventoryPage from './pages/admin/AdminInventoryPage';
@@ -63,6 +64,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['CUSTOMER']}>
                 <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/payment/result"
+            element={
+              <ProtectedRoute allowedRoles={['CUSTOMER']}>
+                <PaymentResultPage />
               </ProtectedRoute>
             }
           />
