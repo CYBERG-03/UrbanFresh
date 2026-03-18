@@ -186,7 +186,6 @@ public class PaymentServiceImpl implements PaymentService {
 
         Event event;
         try {
-            // Stripe signature verification — protects against forged webhook payloads
             event = Webhook.constructEvent(payload, sigHeader, webhookSecret);
         } catch (SignatureVerificationException ex) {
             log.warn("Invalid Stripe webhook signature: {}", ex.getMessage());
@@ -194,22 +193,24 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         String eventType = event.getType();
-        log.info("Stripe webhook received: type={}", eventType);
 
-        // Deserialise the PaymentIntent embedded in the event
-        PaymentIntent intent = (PaymentIntent) event.getDataObjectDeserializer()
-                .getObject()
-                .orElse(null);
+        // Only process events relevant to payment outcomes
+        if (!eventType.equals(EVENT_PAYMENT_SUCCEEDED) && !eventType.equals(EVENT_PAYMENT_FAILED)) {
+            return;
+        }
+
+        log.info("Processing webhook: type={}", eventType);
+
+        PaymentIntent intent = (PaymentIntent) event.getData().getObject();
 
         if (intent == null) {
-            log.warn("Webhook event {} has no deserializable PaymentIntent — skipping.", eventType);
+            log.warn("Event {} has no PaymentIntent — skipping.", eventType);
             return;
         }
 
         switch (eventType) {
             case EVENT_PAYMENT_SUCCEEDED -> handlePaymentSucceeded(intent);
             case EVENT_PAYMENT_FAILED -> handlePaymentFailed(intent);
-            default -> log.debug("Unhandled Stripe event type: {} — no action taken.", eventType);
         }
     }
 
@@ -224,26 +225,30 @@ public class PaymentServiceImpl implements PaymentService {
      * @param intent succeeded PaymentIntent from the Stripe event
      */
     private void handlePaymentSucceeded(PaymentIntent intent) {
-        Payment payment = paymentRepository.findByStripePaymentIntentId(intent.getId())
-                .orElseGet(() -> {
-                    // Safety: if the record was not found (e.g. race/missed creation),
-                    // log and skip rather than crashing the webhook endpoint.
-                    log.warn("No local Payment record for PaymentIntent {} — cannot confirm order.", intent.getId());
-                    return null;
-                });
+        String paymentIntentId = intent.getId();
+        
+        Payment payment = paymentRepository.findByStripePaymentIntentId(paymentIntentId)
+                .orElse(null);
 
-        if (payment == null)
+        if (payment == null) {
+            log.error("Payment not found for PaymentIntent: {}", paymentIntentId);
             return;
+        }
 
         payment.setStatus(PaymentStatus.PAID);
         paymentRepository.save(payment);
 
         Order order = payment.getOrder();
+        if (order == null) {
+            log.error("Order not found for Payment: {}", payment.getId());
+            return;
+        }
+
         order.setStatus(OrderStatus.CONFIRMED);
         order.setPaymentStatus(PaymentStatus.PAID);
         orderRepository.save(order);
 
-        log.info("Payment succeeded: PaymentIntent={}, orderId={} → CONFIRMED", intent.getId(), order.getId());
+        log.info("Order confirmed: orderId={}, PaymentIntentId={}", order.getId(), paymentIntentId);
     }
 
     /**
