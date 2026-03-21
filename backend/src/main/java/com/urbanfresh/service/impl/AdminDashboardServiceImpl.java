@@ -1,13 +1,16 @@
 package com.urbanfresh.service.impl;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+import org.springframework.stereotype.Service;
+
 import com.urbanfresh.dto.AdminDashboardResponse;
 import com.urbanfresh.repository.OrderRepository;
 import com.urbanfresh.repository.ProductRepository;
 import com.urbanfresh.service.AdminDashboardService;
+
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 /**
  * Admin Dashboard Service Implementation
@@ -29,7 +32,7 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         response.setTotalOrders(orderRepository.count());
         response.setTotalRevenue(calculateTotalRevenue());
         response.setActiveSuppliersCount(0); // TODO: requires Supplier model in future sprint
-        response.setTotalProductsCount(productRepository.count());
+        response.setTotalProductsCount((int) productRepository.count());
         
         // Alerts (placeholder - will be enhanced when inventory expires/low-stock tracking added)
         response.setLowStockItemsCount(0); // TODO: enhance with actual low-stock logic from SCRUM-25
@@ -53,8 +56,8 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
         // Fetch all confirmed orders and sum their totals
         return orderRepository.findAll().stream()
             .filter(order -> order.getStatus() != null && 
-                           order.getStatus().toString().equals("CONFIRMED"))
-            .mapToDouble(order -> order.getTotalAmount() != null ? order.getTotalAmount() : 0.0)
+                           "CONFIRMED".equals(order.getStatus().toString()))
+            .mapToDouble(order -> order.getTotalAmount() != null ? order.getTotalAmount().doubleValue() : 0.0)
             .sum();
     }
 }
