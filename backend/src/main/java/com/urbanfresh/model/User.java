@@ -56,6 +56,11 @@ public class User {
     @Column(nullable = false, length = 20)
     private Role role;
 
+    /** Account activation status. False means the user cannot log in. Defaults to true. */
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean isActive = true;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

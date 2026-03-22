@@ -203,6 +203,58 @@ public class AdminController {
         return ResponseEntity.noContent().build();
     }
 
+    // ── Delivery Personnel Management ──────────────────────────────────────
+
+    /**
+     * Create a new delivery personnel account.
+     * POST /api/admin/delivery-personnel
+     *
+     * @param request validated delivery personnel creation payload
+     * @return 201 Created with the created delivery personnel info
+     */
+    @PostMapping("/delivery-personnel")
+    public ResponseEntity<com.urbanfresh.dto.response.DeliveryPersonnelResponse> createDeliveryPersonnel(
+            @Valid @RequestBody com.urbanfresh.dto.request.CreateDeliveryPersonnelRequest request) {
+        var response = adminService.createDeliveryPersonnel(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * Retrieve all delivery personnel (paginated) for admin management.
+     * GET /api/admin/delivery-personnel?page=0&size=20
+     *
+     * @param page zero-based page index (default 0)
+     * @param size items per page (default 20, clamped to 1–100)
+     * @return 200 OK with page of DeliveryPersonnelResponse
+     */
+    @GetMapping("/delivery-personnel")
+    public ResponseEntity<Page<com.urbanfresh.dto.response.DeliveryPersonnelResponse>> getDeliveryPersonnel(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        int safeSize = Math.max(1, Math.min(size, 100));
+        int safePage = Math.max(0, page);
+        org.springframework.data.domain.Pageable pageable =
+                org.springframework.data.domain.PageRequest.of(safePage, safeSize);
+        return ResponseEntity.ok(adminService.getDeliveryPersonnel(pageable));
+    }
+
+    /**
+     * Activate or deactivate a delivery personnel account.
+     * PATCH /api/admin/delivery-personnel/{id}/status
+     *
+     * @param deliveryPersonnelId delivery personnel ID
+     * @param request contains isActive flag (true=activate, false=deactivate)
+     * @return 200 OK with updated DeliveryPersonnelResponse
+     */
+    @PatchMapping("/delivery-personnel/{id}/status")
+    public ResponseEntity<com.urbanfresh.dto.response.DeliveryPersonnelResponse> updateDeliveryPersonnelStatus(
+            @PathVariable("id") Long deliveryPersonnelId,
+            @Valid @RequestBody com.urbanfresh.dto.request.UpdateDeliveryPersonnelStatusRequest request) {
+        var response = adminService.updateDeliveryPersonnelStatus(deliveryPersonnelId, request);
+        return ResponseEntity.ok(response);
+    }
+
     /**
      * Uploads a product image and returns its public URL.
      * POST /api/admin/products/upload-image  (multipart/form-data, field = "file")

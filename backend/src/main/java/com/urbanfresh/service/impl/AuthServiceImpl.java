@@ -66,6 +66,7 @@ public class AuthServiceImpl implements AuthService {
     /**
      * Authenticate user by email and password, return JWT on success.
      * Verifies credentials manually (no AuthenticationManager needed).
+     * Also checks if the user account is active (can be deactivated by admin).
      */
     @Override
     public LoginResponse login(LoginRequest request) {
@@ -74,6 +75,12 @@ public class AuthServiceImpl implements AuthService {
 
         // Verify raw password against stored BCrypt hash
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new InvalidCredentialsException();
+        }
+
+        // Check if user account is active (admin may have deactivated it)
+        // Treat inactive as invalid credentials for security (don't reveal account status)
+        if (user.getIsActive() == null || !user.getIsActive()) {
             throw new InvalidCredentialsException();
         }
 
