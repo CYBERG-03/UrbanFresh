@@ -16,10 +16,14 @@ import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.urbanfresh.dto.request.BrandRequest;
 import com.urbanfresh.dto.request.CreateSupplierRequest;
+import com.urbanfresh.dto.request.UpdateSupplierRequest;
 import com.urbanfresh.dto.request.UpdateSupplierStatusRequest;
+import com.urbanfresh.dto.response.BrandResponse;
 import com.urbanfresh.dto.response.SupplierResponse;
 import com.urbanfresh.exception.BrandAssignmentException;
+import com.urbanfresh.exception.BrandConflictException;
 import com.urbanfresh.exception.DuplicateEmailException;
 import com.urbanfresh.exception.UserNotFoundException;
 import com.urbanfresh.model.Brand;
@@ -189,5 +193,63 @@ class AdminServiceImplTest {
 
         assertThatThrownBy(() -> adminService.updateSupplierStatus(44L, new UpdateSupplierStatusRequest(false)))
                 .isInstanceOf(UserNotFoundException.class);
+    }
+
+    /**
+     * Verifies supplier update replaces brand assignments.
+     */
+    @Test
+    void updateSupplier_replacesBrandMappings() {
+        User supplier = User.builder()
+                .id(44L)
+                .name("Old Supplier")
+                .email("supplier@urbanfresh.test")
+                .role(Role.SUPPLIER)
+                .isActive(true)
+                .build();
+        Brand brandOne = Brand.builder().id(1L).name("FreshHarvest").code("FRESH").active(true).build();
+        Brand brandTwo = Brand.builder().id(2L).name("GreenLeaf").code("GREEN").active(true).build();
+
+        when(userRepository.findByIdAndRole(44L, Role.SUPPLIER)).thenReturn(Optional.of(supplier));
+        when(brandRepository.findAllById(any())).thenReturn(List.of(brandOne, brandTwo));
+
+        SupplierResponse response = adminService.updateSupplier(
+                44L,
+                new UpdateSupplierRequest("Updated Supplier", "0775551212", List.of(1L, 2L))
+        );
+
+        assertThat(response.getName()).isEqualTo("Updated Supplier");
+        assertThat(response.getBrands()).hasSize(2);
+        verify(supplierBrandRepository).deleteBySupplierId(44L);
+        verify(supplierBrandRepository).saveAll(any());
+    }
+
+    /**
+     * Verifies brand create succeeds with unique name and code.
+     */
+    @Test
+    void createBrand_createsNewBrand() {
+        Brand savedBrand = Brand.builder().id(10L).name("Island Green").code("IG").active(true).build();
+
+        when(brandRepository.existsByNameIgnoreCase("Island Green")).thenReturn(false);
+        when(brandRepository.existsByCodeIgnoreCase("IG")).thenReturn(false);
+        when(brandRepository.save(any(Brand.class))).thenReturn(savedBrand);
+
+        BrandResponse response = adminService.createBrand(new BrandRequest("Island Green", "ig"));
+
+        assertThat(response.getName()).isEqualTo("Island Green");
+        assertThat(response.getCode()).isEqualTo("IG");
+        assertThat(response.getActive()).isTrue();
+    }
+
+    /**
+     * Verifies create brand rejects duplicate name.
+     */
+    @Test
+    void createBrand_throwsWhenNameExists() {
+        when(brandRepository.existsByNameIgnoreCase("Island Green")).thenReturn(true);
+
+        assertThatThrownBy(() -> adminService.createBrand(new BrandRequest("Island Green", "IG")))
+                .isInstanceOf(BrandConflictException.class);
     }
 }
