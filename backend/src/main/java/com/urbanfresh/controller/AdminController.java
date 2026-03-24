@@ -28,9 +28,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.urbanfresh.dto.request.BrandRequest;
+import com.urbanfresh.dto.request.CreateSupplierRequest;
 import com.urbanfresh.dto.request.OrderStatusUpdateRequest;
 import com.urbanfresh.dto.request.ProductRequest;
-import com.urbanfresh.dto.request.CreateSupplierRequest;
+import com.urbanfresh.dto.request.UpdateSupplierRequest;
 import com.urbanfresh.dto.request.UpdateSupplierStatusRequest;
 import com.urbanfresh.dto.response.AdminOrderResponse;
 import com.urbanfresh.dto.response.AdminOrderReviewResponse;
@@ -301,6 +303,21 @@ public class AdminController {
     }
 
     /**
+     * Update supplier profile and assigned brands.
+     * PUT /api/admin/suppliers/{id}
+     *
+     * @param supplierId supplier user ID
+     * @param request validated update payload
+     * @return 200 OK with updated SupplierResponse
+     */
+    @PutMapping("/suppliers/{id}")
+    public ResponseEntity<SupplierResponse> updateSupplier(
+            @PathVariable("id") Long supplierId,
+            @Valid @RequestBody UpdateSupplierRequest request) {
+        return ResponseEntity.ok(adminService.updateSupplier(supplierId, request));
+    }
+
+    /**
      * Returns active brands for supplier assignment forms.
      * GET /api/admin/brands
      *
@@ -309,6 +326,58 @@ public class AdminController {
     @GetMapping("/brands")
     public ResponseEntity<List<BrandResponse>> getActiveBrands() {
         return ResponseEntity.ok(adminService.getActiveBrands());
+    }
+
+    /**
+     * Returns all brands for admin brand management.
+     * GET /api/admin/brands/all
+     *
+     * @return 200 OK with all brands list
+     */
+    @GetMapping("/brands/all")
+    public ResponseEntity<List<BrandResponse>> getAllBrands() {
+        return ResponseEntity.ok(adminService.getAllBrands());
+    }
+
+    /**
+     * Create a new brand.
+     * POST /api/admin/brands
+     *
+     * @param request validated brand payload
+     * @return 201 Created with BrandResponse
+     */
+    @PostMapping("/brands")
+    public ResponseEntity<BrandResponse> createBrand(@Valid @RequestBody BrandRequest request) {
+        BrandResponse response = adminService.createBrand(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * Update an existing brand.
+     * PUT /api/admin/brands/{id}
+     *
+     * @param brandId brand ID
+     * @param request validated brand payload
+     * @return 200 OK with updated BrandResponse
+     */
+    @PutMapping("/brands/{id}")
+    public ResponseEntity<BrandResponse> updateBrand(
+            @PathVariable("id") Long brandId,
+            @Valid @RequestBody BrandRequest request) {
+        return ResponseEntity.ok(adminService.updateBrand(brandId, request));
+    }
+
+    /**
+     * Soft delete a brand by deactivation.
+     * DELETE /api/admin/brands/{id}
+     *
+     * @param brandId brand ID
+     * @return 204 No Content
+     */
+    @DeleteMapping("/brands/{id}")
+    public ResponseEntity<Void> deleteBrand(@PathVariable("id") Long brandId) {
+        adminService.deleteBrand(brandId);
+        return ResponseEntity.noContent().build();
     }
 
     /**

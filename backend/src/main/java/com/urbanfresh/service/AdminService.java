@@ -5,9 +5,11 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import com.urbanfresh.dto.request.BrandRequest;
 import com.urbanfresh.dto.request.CreateDeliveryPersonnelRequest;
 import com.urbanfresh.dto.request.CreateSupplierRequest;
 import com.urbanfresh.dto.request.UpdateDeliveryPersonnelStatusRequest;
+import com.urbanfresh.dto.request.UpdateSupplierRequest;
 import com.urbanfresh.dto.request.UpdateSupplierStatusRequest;
 import com.urbanfresh.dto.response.AdminStatsResponse;
 import com.urbanfresh.dto.response.BrandResponse;
@@ -82,9 +84,49 @@ public interface AdminService {
     SupplierResponse updateSupplierStatus(Long supplierId, UpdateSupplierStatusRequest request);
 
     /**
+     * Update supplier profile details and assigned brands.
+     *
+     * @param supplierId supplier account ID
+     * @param request validated update payload
+     * @return updated supplier account and assigned brands
+     */
+    SupplierResponse updateSupplier(Long supplierId, UpdateSupplierRequest request);
+
+    /**
      * Retrieve assignable active brands for admin forms.
      *
      * @return list of active brands
      */
     List<BrandResponse> getActiveBrands();
+
+    /**
+     * Retrieve all brands for brand management.
+     *
+     * @return list of all brands sorted by name
+     */
+    List<BrandResponse> getAllBrands();
+
+    /**
+     * Create a new brand for supplier and product assignment.
+     *
+     * @param request validated create payload
+     * @return created brand
+     */
+    BrandResponse createBrand(BrandRequest request);
+
+    /**
+     * Update an existing brand.
+     *
+     * @param brandId brand ID
+     * @param request validated update payload
+     * @return updated brand
+     */
+    BrandResponse updateBrand(Long brandId, BrandRequest request);
+
+    /**
+     * Soft delete a brand by deactivating it.
+     *
+     * @param brandId brand ID
+     */
+    void deleteBrand(Long brandId);
 }

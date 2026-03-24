@@ -12,13 +12,17 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.urbanfresh.dto.request.CreateDeliveryPersonnelRequest;
 import com.urbanfresh.dto.request.CreateSupplierRequest;
+import com.urbanfresh.dto.request.BrandRequest;
 import com.urbanfresh.dto.request.UpdateDeliveryPersonnelStatusRequest;
+import com.urbanfresh.dto.request.UpdateSupplierRequest;
 import com.urbanfresh.dto.request.UpdateSupplierStatusRequest;
 import com.urbanfresh.dto.response.AdminStatsResponse;
 import com.urbanfresh.dto.response.BrandResponse;
 import com.urbanfresh.dto.response.DeliveryPersonnelResponse;
 import com.urbanfresh.dto.response.SupplierResponse;
 import com.urbanfresh.exception.BrandAssignmentException;
+import com.urbanfresh.exception.BrandConflictException;
+import com.urbanfresh.exception.BrandNotFoundException;
 import com.urbanfresh.exception.DuplicateEmailException;
 import com.urbanfresh.exception.UserNotFoundException;
 import com.urbanfresh.model.Brand;
@@ -141,10 +145,7 @@ public class AdminServiceImpl implements AdminService {
         }
 
         Set<Long> uniqueBrandIds = new HashSet<>(request.getBrandIds());
-        List<Brand> brands = brandRepository.findAllById(uniqueBrandIds);
-        if (brands.size() != uniqueBrandIds.size()) {
-            throw new BrandAssignmentException("One or more provided brand IDs are invalid.");
-        }
+        List<Brand> brands = loadValidActiveBrands(uniqueBrandIds);
 
         User supplier = User.builder()
                 .name(request.getName())
@@ -202,6 +203,39 @@ public class AdminServiceImpl implements AdminService {
     }
 
     /**
+     * Update supplier profile details and replace assigned brands.
+     *
+     * @param supplierId supplier account ID
+     * @param request validated update payload
+     * @return updated supplier response with assigned brands
+     */
+    @Override
+    @Transactional
+    public SupplierResponse updateSupplier(Long supplierId, UpdateSupplierRequest request) {
+        User supplier = userRepository.findByIdAndRole(supplierId, Role.SUPPLIER)
+                .orElseThrow(() -> new UserNotFoundException("Supplier not found with ID: " + supplierId));
+
+        Set<Long> uniqueBrandIds = new HashSet<>(request.getBrandIds());
+        List<Brand> brands = loadValidActiveBrands(uniqueBrandIds);
+
+        supplier.setName(request.getName().trim());
+        supplier.setPhone(normalizePhone(request.getPhone()));
+        userRepository.save(supplier);
+
+        supplierBrandRepository.deleteBySupplierId(supplierId);
+        List<SupplierBrand> mappings = brands.stream()
+                .map(brand -> SupplierBrand.builder()
+                        .id(new SupplierBrandId(supplierId, brand.getId()))
+                        .supplier(supplier)
+                        .brand(brand)
+                        .build())
+                .toList();
+        supplierBrandRepository.saveAll(mappings);
+
+        return toSupplierResponse(supplier, mappings);
+    }
+
+    /**
      * Retrieve active brands for assignment forms.
      *
      * @return list of active brands
@@ -213,6 +247,90 @@ public class AdminServiceImpl implements AdminService {
                 .stream()
                 .map(this::toBrandResponse)
                 .toList();
+    }
+
+    /**
+     * Retrieve all brands for admin management views.
+     *
+     * @return list of all brands
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public List<BrandResponse> getAllBrands() {
+        return brandRepository.findAllByOrderByNameAsc()
+                .stream()
+                .map(this::toBrandResponse)
+                .toList();
+    }
+
+    /**
+     * Create a new brand with uniqueness validation for name and code.
+     *
+     * @param request validated create payload
+     * @return created brand response
+     */
+    @Override
+    @Transactional
+    public BrandResponse createBrand(BrandRequest request) {
+        String normalizedName = normalizeRequired(request.getName());
+        String normalizedCode = normalizeRequired(request.getCode()).toUpperCase();
+
+        if (brandRepository.existsByNameIgnoreCase(normalizedName)) {
+            throw new BrandConflictException("A brand with this name already exists.");
+        }
+        if (brandRepository.existsByCodeIgnoreCase(normalizedCode)) {
+            throw new BrandConflictException("A brand with this code already exists.");
+        }
+
+        Brand brand = Brand.builder()
+                .name(normalizedName)
+                .code(normalizedCode)
+                .active(true)
+                .build();
+
+        return toBrandResponse(brandRepository.save(brand));
+    }
+
+    /**
+     * Update a brand's display name and code with uniqueness checks.
+     *
+     * @param brandId brand ID
+     * @param request validated update payload
+     * @return updated brand response
+     */
+    @Override
+    @Transactional
+    public BrandResponse updateBrand(Long brandId, BrandRequest request) {
+        Brand brand = brandRepository.findById(brandId)
+                .orElseThrow(() -> new BrandNotFoundException(brandId));
+
+        String normalizedName = normalizeRequired(request.getName());
+        String normalizedCode = normalizeRequired(request.getCode()).toUpperCase();
+
+        if (brandRepository.existsByNameIgnoreCaseAndIdNot(normalizedName, brandId)) {
+            throw new BrandConflictException("A brand with this name already exists.");
+        }
+        if (brandRepository.existsByCodeIgnoreCaseAndIdNot(normalizedCode, brandId)) {
+            throw new BrandConflictException("A brand with this code already exists.");
+        }
+
+        brand.setName(normalizedName);
+        brand.setCode(normalizedCode);
+        return toBrandResponse(brandRepository.save(brand));
+    }
+
+    /**
+     * Soft delete a brand by setting active=false.
+     *
+     * @param brandId brand ID
+     */
+    @Override
+    @Transactional
+    public void deleteBrand(Long brandId) {
+        Brand brand = brandRepository.findById(brandId)
+                .orElseThrow(() -> new BrandNotFoundException(brandId));
+        brand.setActive(false);
+        brandRepository.save(brand);
     }
 
     /** Map User entity → DeliveryPersonnelResponse DTO. Centralised to keep mapping DRY. */
@@ -253,6 +371,31 @@ public class AdminServiceImpl implements AdminService {
                 .id(brand.getId())
                 .name(brand.getName())
                 .code(brand.getCode())
+                .active(brand.getActive())
                 .build();
+    }
+
+    private List<Brand> loadValidActiveBrands(Set<Long> brandIds) {
+        List<Brand> brands = brandRepository.findAllById(brandIds);
+        if (brands.size() != brandIds.size()) {
+            throw new BrandAssignmentException("One or more provided brand IDs are invalid.");
+        }
+        boolean hasInactiveBrand = brands.stream().anyMatch(brand -> !Boolean.TRUE.equals(brand.getActive()));
+        if (hasInactiveBrand) {
+            throw new BrandAssignmentException("Only active brands can be assigned to suppliers.");
+        }
+        return brands;
+    }
+
+    private String normalizeRequired(String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    private String normalizePhone(String phone) {
+        if (phone == null) {
+            return null;
+        }
+        String trimmed = phone.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }
