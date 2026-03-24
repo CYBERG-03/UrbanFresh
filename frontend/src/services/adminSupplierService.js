@@ -28,6 +28,16 @@ export const createSupplier = (payload) =>
   api.post('/api/admin/suppliers', payload).then((res) => res.data);
 
 /**
+ * Update supplier profile and assigned brands.
+ *
+ * @param {number} supplierId supplier user id
+ * @param {Object} payload supplier update payload
+ * @returns {Promise<Object>} updated supplier
+ */
+export const updateSupplier = (supplierId, payload) =>
+  api.put(`/api/admin/suppliers/${supplierId}`, payload).then((res) => res.data);
+
+/**
  * Toggle supplier account status.
  *
  * @param {number} supplierId supplier user id
