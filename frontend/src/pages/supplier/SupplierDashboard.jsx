@@ -89,19 +89,20 @@ export default function SupplierDashboard() {
               </div>
             </div>
 
-            <div className="mt-6 flex justify-between items-center mb-3">
-              <h2 className="text-lg font-semibold text-gray-800">Products You Can Manage</h2>
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg shadow"
-              >
-                + Request New Product
-              </button>
-            </div>
+            <div className="mt-6">
+              <div className="flex justify-between items-center mb-3">
+                <h2 className="text-lg font-semibold text-gray-800">Products You Can Manage</h2>
+                <button
+                  onClick={() => setIsModalOpen(true)}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg shadow"
+                >
+                  + Request New Product
+                </button>
+              </div>
 
-            <RequestProductModal
-              isOpen={isModalOpen}
-              onClose={() => setIsModalOpen(false)}
+              <RequestProductModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
               onSuccess={() => {
                 loadSupplierData(); // refresh products and dashboard numbers
               }}

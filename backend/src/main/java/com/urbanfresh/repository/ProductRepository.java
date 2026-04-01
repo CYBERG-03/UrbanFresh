@@ -34,7 +34,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
      * @param pageable sort and pagination instructions from the controller
      * @return page of matching products
      */
-    @Query("SELECT p FROM Product p WHERE p.approvalStatus = 'APPROVED' " +
+    @Query("SELECT p FROM Product p WHERE p.approvalStatus = 'APPROVED' AND p.stockQuantity > 0 " +
            "AND (:search IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')) " +
            "  OR LOWER(p.description) LIKE LOWER(CONCAT('%', :search, '%'))) " +
            "AND (:category IS NULL OR LOWER(p.category) = LOWER(:category))")
@@ -49,7 +49,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
      *
      * @return list of unique category strings
      */
-    @Query("SELECT DISTINCT p.category FROM Product p WHERE p.category IS NOT NULL AND p.approvalStatus = 'APPROVED' ORDER BY p.category ASC")
+    @Query("SELECT DISTINCT p.category FROM Product p WHERE p.category IS NOT NULL AND p.approvalStatus = 'APPROVED' AND p.stockQuantity > 0 ORDER BY p.category ASC")
     List<String> findAllCategories();
 
     /**
@@ -65,7 +65,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @Query("SELECT NEW com.urbanfresh.dto.response.ProductSuggestionResponse(" +
            "p.id, p.name, p.imageUrl, p.price, p.unit) " +
            "FROM Product p " +
-           "WHERE p.approvalStatus = 'APPROVED' AND LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%')) " +        
+           "WHERE p.approvalStatus = 'APPROVED' AND p.stockQuantity > 0 AND LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%')) " +
            "ORDER BY p.name ASC")
     List<com.urbanfresh.dto.response.ProductSuggestionResponse> findNameSuggestions(
             @Param("query") String query, Pageable pageable);
@@ -88,7 +88,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
      *
      * @return list of featured products, empty list when none exist
      */
-    @Query("SELECT p FROM Product p WHERE p.featured = true AND p.approvalStatus = 'APPROVED'")
+    @Query("SELECT p FROM Product p WHERE p.featured = true AND p.approvalStatus = 'APPROVED' AND p.stockQuantity > 0")
     List<Product> findByFeaturedTrue();
 
     /**
@@ -135,4 +135,9 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
            "AND b.active = true " +
            "AND p.stockQuantity <= p.reorderThreshold")
     int countPendingRestocksForSupplier(@Param("supplierId") Long supplierId);
+
+    /**
+     * Find products by approval status with pagination.
+     */
+    Page<Product> findByApprovalStatus(com.urbanfresh.model.ApprovalStatus status, Pageable pageable);
 }

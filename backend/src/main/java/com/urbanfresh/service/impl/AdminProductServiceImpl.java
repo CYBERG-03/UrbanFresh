@@ -119,7 +119,32 @@ public class AdminProductServiceImpl implements AdminProductService {
         productRepository.deleteById(id);
     }
 
-    // ── Private helpers ────────────────────────────────────────────────────────
+    @Override
+    public Page<AdminProductResponse> getPendingProducts(int page, int size) {
+        return productRepository.findByApprovalStatus(
+                com.urbanfresh.model.ApprovalStatus.PENDING,
+                PageRequest.of(page, size, Sort.by("createdAt").descending())
+        ).map(this::toAdminResponse);
+    }
+
+    @Override
+    public AdminProductResponse approveProduct(Long id) {
+        Product product = findOrThrow(id);
+        product.setApprovalStatus(com.urbanfresh.model.ApprovalStatus.APPROVED);
+        product.setStockQuantity(0); // Initialize with 0 stock as requested
+        return toAdminResponse(productRepository.save(product));
+    }
+
+    @Override
+    public AdminProductResponse rejectProduct(Long id) {
+        Product product = findOrThrow(id);
+        AdminProductResponse response = toAdminResponse(product);
+        response.setApprovalStatus("REJECTED");
+        productRepository.delete(product);
+        return response;
+    }
+
+    // ── Private helpers ──────────────────────────────────────────────────────
 
     /** Fetch product by ID or throw a typed 404 exception. */
     private Product findOrThrow(Long id) {
