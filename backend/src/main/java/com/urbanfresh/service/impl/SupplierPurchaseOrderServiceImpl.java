@@ -32,10 +32,12 @@ public class SupplierPurchaseOrderServiceImpl implements SupplierPurchaseOrderSe
 
     private final PurchaseOrderRepository purchaseOrderRepository;
     private final SupplierBrandRepository supplierBrandRepository;
+    private final com.urbanfresh.repository.UserRepository userRepository;
 
     @Override
     @Transactional(readOnly = true)
-    public List<PurchaseOrderDto> getPurchaseOrdersForSupplier(Long supplierId) {
+    public List<PurchaseOrderDto> getPurchaseOrdersForSupplier(String email) {
+        Long supplierId = getSupplierIdFromEmail(email);
         List<Long> brandIds = getBrandIdsForSupplier(supplierId);
         
         if (brandIds.isEmpty()) {
@@ -50,7 +52,8 @@ public class SupplierPurchaseOrderServiceImpl implements SupplierPurchaseOrderSe
 
     @Override
     @Transactional
-    public PurchaseOrderDto updateShipmentStatus(Long supplierId, Long orderId, UpdatePurchaseOrderStatusDto updateDto) {
+    public PurchaseOrderDto updateShipmentStatus(String email, Long orderId, UpdatePurchaseOrderStatusDto updateDto) {
+        Long supplierId = getSupplierIdFromEmail(email);
         List<Long> brandIds = getBrandIdsForSupplier(supplierId);
 
         // First, verify if the purchase order exists at all to give correct 404 vs 403
@@ -73,6 +76,15 @@ public class SupplierPurchaseOrderServiceImpl implements SupplierPurchaseOrderSe
         log.info("Supplier ID {} updated Purchase Order ID {} status to {}", supplierId, orderId, updateDto.getStatus());
 
         return mapToDto(updatedOrder);
+    }
+
+    /**
+     * Helper: Extract supplier ID from email
+     */
+    private Long getSupplierIdFromEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new com.urbanfresh.exception.UserNotFoundException("User not found with email: " + email))
+                .getId();
     }
 
     /**
