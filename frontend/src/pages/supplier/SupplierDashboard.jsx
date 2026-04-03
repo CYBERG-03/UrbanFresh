@@ -62,6 +62,7 @@ export default function SupplierDashboard() {
               Logout
             </button>
           </div>
+        </div>
         <p className="text-gray-600 mb-6">
           Welcome, <span className="font-semibold">{user?.name}</span>
         </p>

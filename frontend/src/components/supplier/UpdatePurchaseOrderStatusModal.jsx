@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
-import useSupplierPurchaseOrders from '../../../hooks/useSupplierPurchaseOrders';
+import useSupplierPurchaseOrders from '../../hooks/useSupplierPurchaseOrders';
 
 /**
  * Component Layer - Modal for a supplier to update the status and estimated
