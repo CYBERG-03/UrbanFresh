@@ -55,6 +55,14 @@ public class PurchaseOrder {
     @Column(length = 100)
     private String estimatedDeliveryTimeline;
 
+    /** Reason provided by the supplier if they reject (CANCEL) the order. */
+    @Column(length = 255)
+    private String rejectionReason;
+
+    /** Notice provided by the supplier after rejection, informing admin they can proceed now. */
+    @Column(length = 500)
+    private String supplierNotice;
+
     @OneToMany(mappedBy = "purchaseOrder", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<PurchaseOrderItem> items = new ArrayList<>();

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { getPurchaseOrders, updatePurchaseOrderStatus } from '../services/supplierPurchaseOrderService';
+import { getPurchaseOrders, updatePurchaseOrderStatus, addSupplierNotice } from '../services/supplierPurchaseOrderService';
 
 /**
  * Custom Hook - Manages the state, fetching, and updates for supplier purchase orders.
@@ -47,12 +47,28 @@ const useSupplierPurchaseOrders = () => {
     }
   };
 
+  const sendNotice = async (orderId, noticeText) => {
+    try {
+      const updatedOrder = await addSupplierNotice(orderId, noticeText);
+      setOrders((prev) =>
+        prev.map((order) => (order.id === orderId ? updatedOrder : order))
+      );
+      return { success: true };
+    } catch (err) {
+      return {
+        success: false,
+        error: err.response?.data?.message || 'Failed to send notice',
+      };
+    }
+  };
+
   return {
     orders,
     loading,
     error,
     fetchOrders,
     updateStatus,
+    sendNotice,
   };
 };
 

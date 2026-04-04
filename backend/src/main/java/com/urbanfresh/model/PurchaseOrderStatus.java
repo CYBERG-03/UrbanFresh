@@ -6,6 +6,7 @@ package com.urbanfresh.model;
  */
 public enum PurchaseOrderStatus {
     PENDING,
+    ACCEPTED,
     SHIPPED,
     DELIVERED,
     COMPLETED,

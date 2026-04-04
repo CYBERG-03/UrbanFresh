@@ -71,9 +71,32 @@ public class SupplierPurchaseOrderServiceImpl implements SupplierPurchaseOrderSe
         if (updateDto.getEstimatedDeliveryTimeline() != null) {
             order.setEstimatedDeliveryTimeline(updateDto.getEstimatedDeliveryTimeline());
         }
+        if (updateDto.getRejectionReason() != null) {
+            order.setRejectionReason(updateDto.getRejectionReason());
+        }
 
         PurchaseOrder updatedOrder = purchaseOrderRepository.save(order);
         log.info("Supplier ID {} updated Purchase Order ID {} status to {}", supplierId, orderId, updateDto.getStatus());
+
+        return mapToDto(updatedOrder);
+    }
+
+    @Override
+    @Transactional
+    public PurchaseOrderDto addSupplierNotice(String email, Long orderId, com.urbanfresh.dto.request.UpdatePurchaseOrderNoticeDto noticeDto) {
+        Long supplierId = getSupplierIdFromEmail(email);
+        List<Long> brandIds = getBrandIdsForSupplier(supplierId);
+
+        PurchaseOrder order = purchaseOrderRepository.findById(orderId)
+                .orElseThrow(() -> new PurchaseOrderNotFoundException("Purchase Order not found with ID: " + orderId));
+
+        if (!brandIds.contains(order.getBrand().getId())) {
+            throw new PurchaseOrderAccessException("You do not have permission to access or update this purchase order.");
+        }
+
+        order.setSupplierNotice(noticeDto.getNotice());
+        PurchaseOrder updatedOrder = purchaseOrderRepository.save(order);
+        log.info("Supplier ID {} added notice to Purchase Order ID {}", supplierId, orderId);
 
         return mapToDto(updatedOrder);
     }
@@ -117,6 +140,8 @@ public class SupplierPurchaseOrderServiceImpl implements SupplierPurchaseOrderSe
                 .brandName(entity.getBrand().getName())
                 .status(entity.getStatus())
                 .estimatedDeliveryTimeline(entity.getEstimatedDeliveryTimeline())
+                .rejectionReason(entity.getRejectionReason())
+                .supplierNotice(entity.getSupplierNotice())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .items(itemsDto)

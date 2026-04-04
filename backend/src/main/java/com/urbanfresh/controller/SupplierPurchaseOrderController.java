@@ -60,4 +60,17 @@ public class SupplierPurchaseOrderController {
         PurchaseOrderDto updatedOrder = purchaseOrderService.updateShipmentStatus(authentication.getName(), id, updateDto);
         return ResponseEntity.ok(updatedOrder);
     }
+
+    /**
+     * Add a notice to the order indicating progress or resolved blocks.
+     */
+    @PatchMapping("/{id}/notice")
+    public ResponseEntity<PurchaseOrderDto> addSupplierNotice(
+            @PathVariable Long id,
+            @Valid @RequestBody com.urbanfresh.dto.request.UpdatePurchaseOrderNoticeDto noticeDto,
+            Authentication authentication) {
+        
+        PurchaseOrderDto updatedOrder = purchaseOrderService.addSupplierNotice(authentication.getName(), id, noticeDto);
+        return ResponseEntity.ok(updatedOrder);
+    }
 }
