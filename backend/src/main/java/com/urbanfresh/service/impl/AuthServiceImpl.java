@@ -10,6 +10,7 @@ import com.urbanfresh.dto.response.LoginResponse;
 import com.urbanfresh.dto.response.RegisterResponse;
 import com.urbanfresh.exception.DuplicateEmailException;
 import com.urbanfresh.exception.InvalidCredentialsException;
+import com.urbanfresh.exception.SupplierInactiveException;
 import com.urbanfresh.model.Role;
 import com.urbanfresh.model.User;
 import com.urbanfresh.repository.UserRepository;
@@ -66,6 +67,7 @@ public class AuthServiceImpl implements AuthService {
     /**
      * Authenticate user by email and password, return JWT on success.
      * Verifies credentials manually (no AuthenticationManager needed).
+     * Also checks if the user account is active (can be deactivated by admin).
      */
     @Override
     public LoginResponse login(LoginRequest request) {
@@ -74,6 +76,16 @@ public class AuthServiceImpl implements AuthService {
 
         // Verify raw password against stored BCrypt hash
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new InvalidCredentialsException();
+        }
+
+        // Provide explicit guidance for deactivated suppliers as required by business rules.
+        if (user.getRole() == Role.SUPPLIER && (user.getIsActive() == null || !user.getIsActive())) {
+            throw new SupplierInactiveException();
+        }
+
+        // Keep non-supplier behavior generic to avoid leaking account state.
+        if (user.getIsActive() == null || !user.getIsActive()) {
             throw new InvalidCredentialsException();
         }
 

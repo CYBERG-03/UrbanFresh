@@ -8,6 +8,8 @@ import com.urbanfresh.dto.request.OrderStatusUpdateRequest;
 import com.urbanfresh.dto.request.PlaceOrderRequest;
 import com.urbanfresh.dto.response.AdminOrderResponse;
 import com.urbanfresh.dto.response.AdminOrderReviewResponse;
+import com.urbanfresh.dto.response.DeliveryAssignedOrderResponse;
+import com.urbanfresh.dto.response.DeliveryOrderDetailsResponse;
 import com.urbanfresh.dto.response.OrderResponse;
 
 /**
@@ -69,4 +71,50 @@ public interface OrderService {
      * @return updated admin-facing order summary
      */
     AdminOrderResponse updateOrderStatus(Long orderId, OrderStatusUpdateRequest request, String adminEmail);
+
+    /**
+     * Assigns an active delivery person to a READY order and transitions
+     * the status to OUT_FOR_DELIVERY.
+     *
+     * @param orderId          ID of the order to assign
+     * @param deliveryPersonId ID of the active DELIVERY role user
+     * @param adminEmail       authenticated admin email used for auditing
+     * @return updated admin-facing order summary with delivery person info
+     */
+    AdminOrderResponse assignDeliveryPersonnel(Long orderId, Long deliveryPersonId, String adminEmail);
+
+    /**
+     * Returns a paginated list of orders assigned to the authenticated delivery user.
+     *
+     * @param deliveryEmail email extracted from the JWT principal
+     * @param page zero-based page index
+     * @param size number of records per page
+     * @return page of delivery dashboard summary rows
+     */
+    Page<DeliveryAssignedOrderResponse> getAssignedOrdersForDelivery(String deliveryEmail, int page, int size);
+
+    /**
+     * Returns delivery details for an order assigned to the authenticated delivery user.
+     * Denies access when the order is not assigned to that delivery person.
+     *
+     * @param orderId order ID requested by delivery personnel
+     * @param deliveryEmail email extracted from the JWT principal
+     * @return delivery-focused order details (address, items, and current status)
+     */
+    DeliveryOrderDetailsResponse getAssignedOrderDetailsForDelivery(Long orderId, String deliveryEmail);
+
+    /**
+     * Updates status for an order assigned to the authenticated delivery user.
+     * Delivery transitions are restricted to OUT_FOR_DELIVERY -> DELIVERED/RETURNED.
+     *
+     * @param orderId order ID assigned to the authenticated delivery user
+     * @param request validated status update payload
+     * @param deliveryEmail email extracted from JWT principal
+     * @return updated delivery-focused order details
+     */
+    DeliveryOrderDetailsResponse updateAssignedOrderStatusForDelivery(
+            Long orderId,
+            OrderStatusUpdateRequest request,
+            String deliveryEmail
+    );
 }

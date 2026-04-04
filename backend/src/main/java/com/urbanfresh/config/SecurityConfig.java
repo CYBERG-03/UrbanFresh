@@ -78,6 +78,7 @@ public class SecurityConfig {
                         // Uploaded product images are public static assets
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
                         // Role-based URL-level restrictions (first line of defence)
+                        // /api/admin/dashboard and all /api/admin/** endpoints require ADMIN role
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/supplier/**").hasRole("SUPPLIER")
                         .requestMatchers("/api/delivery/**").hasRole("DELIVERY")
@@ -107,7 +108,7 @@ public class SecurityConfig {
      */
     @Bean
     public org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource() {
-        var config = new org.springframework.web.cors.CorsConfiguration();
+        var config = new org.springframework.web.cors.CorsConfiguration();      
         config.addAllowedOrigin("http://localhost:5173");
         config.addAllowedMethod("*");
         config.addAllowedHeader("*");

@@ -28,12 +28,19 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.urbanfresh.dto.request.AssignDeliveryRequest;
+import com.urbanfresh.dto.request.BrandRequest;
+import com.urbanfresh.dto.request.CreateSupplierRequest;
 import com.urbanfresh.dto.request.OrderStatusUpdateRequest;
 import com.urbanfresh.dto.request.ProductRequest;
+import com.urbanfresh.dto.request.UpdateSupplierRequest;
+import com.urbanfresh.dto.request.UpdateSupplierStatusRequest;
 import com.urbanfresh.dto.response.AdminOrderResponse;
 import com.urbanfresh.dto.response.AdminOrderReviewResponse;
 import com.urbanfresh.dto.response.AdminProductResponse;
 import com.urbanfresh.dto.response.AdminStatsResponse;
+import com.urbanfresh.dto.response.BrandResponse;
+import com.urbanfresh.dto.response.SupplierResponse;
 import com.urbanfresh.service.AdminProductService;
 import com.urbanfresh.service.AdminService;
 import com.urbanfresh.service.OrderService;
@@ -160,6 +167,37 @@ public class AdminController {
     }
 
     /**
+     * Retrieves all pending product requests from suppliers.
+     * GET /api/admin/products/requests
+     */
+    @GetMapping("/products/requests")
+    public ResponseEntity<Page<AdminProductResponse>> getPendingProducts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        int safeSize = Math.max(1, Math.min(size, 100));
+        int safePage = Math.max(0, page);
+        return ResponseEntity.ok(adminProductService.getPendingProducts(safePage, safeSize));
+    }
+
+    /**
+     * Approves a product request.
+     * PATCH /api/admin/products/{id}/approve
+     */
+    @PatchMapping("/products/{id}/approve")
+    public ResponseEntity<AdminProductResponse> approveProduct(@PathVariable Long id) {
+        return ResponseEntity.ok(adminProductService.approveProduct(id));
+    }
+
+    /**
+     * Rejects a product request.
+     * PATCH /api/admin/products/{id}/reject
+     */
+    @PatchMapping("/products/{id}/reject")
+    public ResponseEntity<AdminProductResponse> rejectProduct(@PathVariable Long id) {
+        return ResponseEntity.ok(adminProductService.rejectProduct(id));
+    }
+
+    /**
      * Creates a new product and adds it to the catalogue immediately.
      * POST /api/admin/products
      *
@@ -169,16 +207,15 @@ public class AdminController {
     @PostMapping("/products")
     public ResponseEntity<AdminProductResponse> createProduct(
             @Valid @RequestBody ProductRequest request) {
-
-        AdminProductResponse created = adminProductService.createProduct(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(adminProductService.createProduct(request));
     }
 
     /**
-     * Replaces all editable fields of an existing product (full update).
+     * Updates an existing product.
      * PUT /api/admin/products/{id}
      *
-     * @param id      product ID to update
+     * @param id      product to update
      * @param request validated product payload with new values
      * @return 200 OK with updated AdminProductResponse; 404 if not found
      */
@@ -200,6 +237,208 @@ public class AdminController {
     @DeleteMapping("/products/{id}")
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         adminProductService.deleteProduct(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    // ── Delivery Personnel Management ──────────────────────────────────────
+
+    /**
+     * Create a new delivery personnel account.
+     * POST /api/admin/delivery-personnel
+     *
+     * @param request validated delivery personnel creation payload
+     * @return 201 Created with the created delivery personnel info
+     */
+    @PostMapping("/delivery-personnel")
+    public ResponseEntity<com.urbanfresh.dto.response.DeliveryPersonnelResponse> createDeliveryPersonnel(
+            @Valid @RequestBody com.urbanfresh.dto.request.CreateDeliveryPersonnelRequest request) {
+        var response = adminService.createDeliveryPersonnel(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * Retrieve all delivery personnel (paginated) for admin management.
+     * GET /api/admin/delivery-personnel?page=0&size=20
+     *
+     * @param page zero-based page index (default 0)
+     * @param size items per page (default 20, clamped to 1–100)
+     * @return 200 OK with page of DeliveryPersonnelResponse
+     */
+    @GetMapping("/delivery-personnel")
+    public ResponseEntity<Page<com.urbanfresh.dto.response.DeliveryPersonnelResponse>> getDeliveryPersonnel(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        int safeSize = Math.max(1, Math.min(size, 100));
+        int safePage = Math.max(0, page);
+        org.springframework.data.domain.Pageable pageable =
+                org.springframework.data.domain.PageRequest.of(safePage, safeSize);
+        return ResponseEntity.ok(adminService.getDeliveryPersonnel(pageable));
+    }
+
+    /**
+     * Activate or deactivate a delivery personnel account.
+     * PATCH /api/admin/delivery-personnel/{id}/status
+     *
+     * @param deliveryPersonnelId delivery personnel ID
+     * @param request contains isActive flag (true=activate, false=deactivate)
+     * @return 200 OK with updated DeliveryPersonnelResponse
+     */
+    @PatchMapping("/delivery-personnel/{id}/status")
+    public ResponseEntity<com.urbanfresh.dto.response.DeliveryPersonnelResponse> updateDeliveryPersonnelStatus(
+            @PathVariable("id") Long deliveryPersonnelId,
+            @Valid @RequestBody com.urbanfresh.dto.request.UpdateDeliveryPersonnelStatusRequest request) {
+        var response = adminService.updateDeliveryPersonnelStatus(deliveryPersonnelId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Returns all active delivery personnel as a flat list for order-assignment dropdowns.
+     * GET /api/admin/delivery-personnel/active
+     *
+     * @return 200 OK with list of active DeliveryPersonnelResponse
+     */
+    @GetMapping("/delivery-personnel/active")
+    public ResponseEntity<java.util.List<com.urbanfresh.dto.response.DeliveryPersonnelResponse>> getActiveDeliveryPersonnel() {
+        return ResponseEntity.ok(adminService.getActiveDeliveryPersonnel());
+    }
+
+    /**
+     * Assigns or reassigns an active delivery person for READY/OUT_FOR_DELIVERY orders.
+     * READY orders move to OUT_FOR_DELIVERY.
+     * PUT /api/admin/orders/{orderId}/assign-delivery
+     *
+     * @param orderId        order ID to assign
+     * @param request        payload containing deliveryPersonId
+     * @param authentication authenticated admin principal
+     * @return 200 OK with updated AdminOrderResponse including delivery person info
+     */
+    @PutMapping("/orders/{orderId}/assign-delivery")
+    public ResponseEntity<AdminOrderResponse> assignDelivery(
+            @PathVariable Long orderId,
+            @Valid @RequestBody AssignDeliveryRequest request,
+            Authentication authentication) {
+
+        return ResponseEntity.ok(
+                orderService.assignDeliveryPersonnel(orderId, request.getDeliveryPersonId(), authentication.getName()));
+    }
+
+    // ── Supplier Management ────────────────────────────────────────────────
+
+    /**
+     * Create a new supplier account with one or more assigned brands.
+     * POST /api/admin/suppliers
+     *
+     * @param request validated supplier creation payload
+     * @return 201 Created with SupplierResponse
+     */
+    @PostMapping("/suppliers")
+    public ResponseEntity<SupplierResponse> createSupplier(@Valid @RequestBody CreateSupplierRequest request) {
+        SupplierResponse response = adminService.createSupplier(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * Retrieve all suppliers for admin management.
+     * GET /api/admin/suppliers
+     *
+     * @return 200 OK with list of SupplierResponse
+     */
+    @GetMapping("/suppliers")
+    public ResponseEntity<List<SupplierResponse>> getSuppliers() {
+        return ResponseEntity.ok(adminService.getSuppliers());
+    }
+
+    /**
+     * Activate or deactivate supplier access.
+     * PATCH /api/admin/suppliers/{id}/status
+     *
+     * @param supplierId supplier user ID
+     * @param request activation payload
+     * @return 200 OK with updated SupplierResponse
+     */
+    @PatchMapping("/suppliers/{id}/status")
+    public ResponseEntity<SupplierResponse> updateSupplierStatus(
+            @PathVariable("id") Long supplierId,
+            @Valid @RequestBody UpdateSupplierStatusRequest request) {
+        return ResponseEntity.ok(adminService.updateSupplierStatus(supplierId, request));
+    }
+
+    /**
+     * Update supplier profile and assigned brands.
+     * PUT /api/admin/suppliers/{id}
+     *
+     * @param supplierId supplier user ID
+     * @param request validated update payload
+     * @return 200 OK with updated SupplierResponse
+     */
+    @PutMapping("/suppliers/{id}")
+    public ResponseEntity<SupplierResponse> updateSupplier(
+            @PathVariable("id") Long supplierId,
+            @Valid @RequestBody UpdateSupplierRequest request) {
+        return ResponseEntity.ok(adminService.updateSupplier(supplierId, request));
+    }
+
+    /**
+     * Returns active brands for supplier assignment forms.
+     * GET /api/admin/brands
+     *
+     * @return 200 OK with list of active brands
+     */
+    @GetMapping("/brands")
+    public ResponseEntity<List<BrandResponse>> getActiveBrands() {
+        return ResponseEntity.ok(adminService.getActiveBrands());
+    }
+
+    /**
+     * Returns all brands for admin brand management.
+     * GET /api/admin/brands/all
+     *
+     * @return 200 OK with all brands list
+     */
+    @GetMapping("/brands/all")
+    public ResponseEntity<List<BrandResponse>> getAllBrands() {
+        return ResponseEntity.ok(adminService.getAllBrands());
+    }
+
+    /**
+     * Create a new brand.
+     * POST /api/admin/brands
+     *
+     * @param request validated brand payload
+     * @return 201 Created with BrandResponse
+     */
+    @PostMapping("/brands")
+    public ResponseEntity<BrandResponse> createBrand(@Valid @RequestBody BrandRequest request) {
+        BrandResponse response = adminService.createBrand(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * Update an existing brand.
+     * PUT /api/admin/brands/{id}
+     *
+     * @param brandId brand ID
+     * @param request validated brand payload
+     * @return 200 OK with updated BrandResponse
+     */
+    @PutMapping("/brands/{id}")
+    public ResponseEntity<BrandResponse> updateBrand(
+            @PathVariable("id") Long brandId,
+            @Valid @RequestBody BrandRequest request) {
+        return ResponseEntity.ok(adminService.updateBrand(brandId, request));
+    }
+
+    /**
+     * Soft delete a brand by deactivation.
+     * DELETE /api/admin/brands/{id}
+     *
+     * @param brandId brand ID
+     * @return 204 No Content
+     */
+    @DeleteMapping("/brands/{id}")
+    public ResponseEntity<Void> deleteBrand(@PathVariable("id") Long brandId) {
+        adminService.deleteBrand(brandId);
         return ResponseEntity.noContent().build();
     }
 

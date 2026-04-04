@@ -17,8 +17,18 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminProductsPage from './pages/admin/AdminProductsPage';
 import AdminInventoryPage from './pages/admin/AdminInventoryPage';
 import AdminOrdersPage from './pages/admin/AdminOrdersPage';
+import AdminProfilePage from './pages/admin/AdminProfilePage';
+import DeliveryPersonnelPage from './pages/admin/DeliveryPersonnelPage';
+import AdminSuppliersPage from './pages/admin/AdminSuppliersPage';
+import AdminBrandsPage from './pages/admin/AdminBrandsPage';
+import AdminPurchaseOrdersPage from './pages/admin/AdminPurchaseOrdersPage';
 import SupplierDashboard from './pages/supplier/SupplierDashboard';
+import SupplierPurchaseOrdersPage from './pages/supplier/SupplierPurchaseOrdersPage';
 import DeliveryDashboard from './pages/delivery/DeliveryDashboard';
+import DeliveryCurrentOrdersPage from './pages/delivery/DeliveryCurrentOrdersPage';
+import DeliveryOrderHistoryPage from './pages/delivery/DeliveryOrderHistoryPage';
+import DeliveryOrderDetailsPage from './pages/delivery/DeliveryOrderDetailsPage';
+import DeliveryProfilePage from './pages/delivery/DeliveryProfilePage';
 import UnauthorizedPage from './pages/error/UnauthorizedPage';
 
 /**
@@ -100,6 +110,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          {/* ── Protected admin routes ── */}
           <Route
             path="/admin/products"
             element={
@@ -125,6 +136,46 @@ function App() {
             }
           />
           <Route
+            path="/admin/profile"
+            element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <AdminProfilePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/delivery-personnel"
+            element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <DeliveryPersonnelPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/suppliers"
+            element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <AdminSuppliersPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/brands"
+            element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <AdminBrandsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/purchase-orders"
+            element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <AdminPurchaseOrdersPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/supplier"
             element={
               <ProtectedRoute allowedRoles={['SUPPLIER']}>
@@ -133,10 +184,50 @@ function App() {
             }
           />
           <Route
+            path="/supplier/purchase-orders"
+            element={
+              <ProtectedRoute allowedRoles={['SUPPLIER']}>
+                <SupplierPurchaseOrdersPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/delivery"
             element={
               <ProtectedRoute allowedRoles={['DELIVERY']}>
                 <DeliveryDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/delivery/orders/current"
+            element={
+              <ProtectedRoute allowedRoles={['DELIVERY']}>
+                <DeliveryCurrentOrdersPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/delivery/orders/history"
+            element={
+              <ProtectedRoute allowedRoles={['DELIVERY']}>
+                <DeliveryOrderHistoryPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/delivery/orders/:orderId"
+            element={
+              <ProtectedRoute allowedRoles={['DELIVERY']}>
+                <DeliveryOrderDetailsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/delivery/profile"
+            element={
+              <ProtectedRoute allowedRoles={['DELIVERY']}>
+                <DeliveryProfilePage />
               </ProtectedRoute>
             }
           />

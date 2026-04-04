@@ -131,3 +131,68 @@ export const updateOrderStatus = (orderId, status, changeReason = null) =>
  */
 export const getOrderReview = (orderId) =>
 	api.get(`/api/admin/orders/${orderId}`).then((res) => res.data);
+
+/**
+ * Fetch delivery details for an order assigned to the authenticated delivery user.
+ * GET /api/delivery/orders/{orderId}
+ *
+ * @param {number|string} orderId order ID
+ * @returns {Promise<Object>} delivery details payload with address, items, and status
+ */
+export const getDeliveryOrderById = (orderId) =>
+	api.get(`/api/delivery/orders/${orderId}`, {
+		headers: {
+			'Cache-Control': 'no-store',
+			Pragma: 'no-cache',
+		},
+	}).then((res) => res.data);
+
+/**
+ * Fetches paginated orders assigned to the authenticated delivery user.
+ * GET /api/delivery/orders?page={page}&size={size}
+ *
+ * @param {number} [page=0] zero-based page index
+ * @param {number} [size=20] page size
+ * @returns {Promise<{content: Array, totalElements: number, totalPages: number, number: number}>}
+ */
+export const getAssignedDeliveryOrders = (page = 0, size = 20) =>
+	api.get('/api/delivery/orders', {
+		params: { page, size },
+		headers: {
+			'Cache-Control': 'no-store',
+			Pragma: 'no-cache',
+		},
+	}).then((res) => res.data);
+
+/**
+ * Updates the status of an order assigned to the authenticated delivery user.
+ * PATCH /api/delivery/orders/{orderId}/status
+ *
+ * @param {number|string} orderId order ID
+ * @param {string} status target status (DELIVERED or RETURNED)
+ * @param {string | null} [changeReason] optional change reason
+ * @returns {Promise<Object>} updated delivery order details payload
+ */
+export const updateAssignedDeliveryOrderStatus = (orderId, status, changeReason = null) =>
+	api.patch(`/api/delivery/orders/${orderId}/status`, { status, changeReason }).then((res) => res.data);
+
+/**
+ * Assigns or reassigns an active delivery person.
+ * READY orders transition to OUT_FOR_DELIVERY.
+ * PUT /api/admin/orders/{orderId}/assign-delivery
+ *
+ * @param {number} orderId target order ID (must be READY)
+ * @param {number} deliveryPersonId active delivery personnel user ID
+ * @returns {Promise<Object>} updated AdminOrderResponse with delivery person info
+ */
+export const assignDeliveryPersonnel = (orderId, deliveryPersonId) =>
+	api.put(`/api/admin/orders/${orderId}/assign-delivery`, { deliveryPersonId }).then((res) => res.data);
+
+/**
+ * Fetches all active delivery personnel for the assignment dropdown.
+ * GET /api/admin/delivery-personnel/active
+ *
+ * @returns {Promise<Array>} list of active DeliveryPersonnelResponse objects
+ */
+export const getActiveDeliveryPersonnel = () =>
+	api.get('/api/admin/delivery-personnel/active').then((res) => res.data);
