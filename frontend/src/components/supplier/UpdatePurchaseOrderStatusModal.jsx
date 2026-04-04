@@ -60,28 +60,30 @@ export default function UpdatePurchaseOrderStatusModal({ isOpen, onClose, order,
               className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500"
               required
             >
-              <option value="PENDING">Pending</option>
+              <option value="ACCEPTED">Accepted</option>
               <option value="SHIPPED">Shipped</option>
               <option value="DELIVERED">Delivered</option>
-              <option value="CANCELLED">Cancelled</option>
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Estimated Delivery Timeline
-            </label>
-            <input
-              type="text"
-              value={timeline}
-              onChange={(e) => setTimeline(e.target.value)}
-              placeholder="e.g., Nov 12th, or 3 days"
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              A general estimate to help admins plan restocking.
-            </p>
-          </div>
+          {status === 'SHIPPED' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Estimated Delivery Timeline
+              </label>
+              <input
+                type="text"
+                value={timeline}
+                onChange={(e) => setTimeline(e.target.value)}
+                placeholder="e.g., Nov 12th, or 3 days"
+                className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-green-500"
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                A general estimate to help admins plan restocking.
+              </p>
+            </div>
+          )}
 
           <div className="flex justify-end space-x-3 mt-6">
             <button

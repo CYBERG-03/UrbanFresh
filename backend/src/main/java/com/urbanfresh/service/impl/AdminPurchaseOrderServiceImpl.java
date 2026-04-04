@@ -121,6 +121,8 @@ public class AdminPurchaseOrderServiceImpl implements AdminPurchaseOrderService 
                 .brandName(entity.getBrand().getName())
                 .status(entity.getStatus())
                 .estimatedDeliveryTimeline(entity.getEstimatedDeliveryTimeline())
+                .rejectionReason(entity.getRejectionReason())
+                .supplierNotice(entity.getSupplierNotice())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .items(itemsDto)

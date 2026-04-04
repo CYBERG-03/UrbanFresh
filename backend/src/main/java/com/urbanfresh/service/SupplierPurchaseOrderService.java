@@ -2,6 +2,7 @@ package com.urbanfresh.service;
 
 import java.util.List;
 
+import com.urbanfresh.dto.request.UpdatePurchaseOrderNoticeDto;
 import com.urbanfresh.dto.request.UpdatePurchaseOrderStatusDto;
 import com.urbanfresh.dto.response.PurchaseOrderDto;
 
@@ -28,4 +29,6 @@ public interface SupplierPurchaseOrderService {
      * @return the updated purchase order DTO.
      */
     PurchaseOrderDto updateShipmentStatus(String email, Long orderId, UpdatePurchaseOrderStatusDto updateDto);
+
+    PurchaseOrderDto addSupplierNotice(String email, Long orderId, UpdatePurchaseOrderNoticeDto noticeDto);
 }

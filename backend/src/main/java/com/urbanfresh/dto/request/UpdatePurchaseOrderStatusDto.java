@@ -21,4 +21,5 @@ public class UpdatePurchaseOrderStatusDto {
     private PurchaseOrderStatus status;
 
     private String estimatedDeliveryTimeline;
+    private String rejectionReason;
 }

@@ -21,3 +21,9 @@ export const getPurchaseOrders = () =>
  */
 export const updatePurchaseOrderStatus = (orderId, updateData) => 
   api.patch(`/api/supplier/purchase-orders/${orderId}/status`, updateData).then((res) => res.data);
+
+/**
+ * Sends a notice to the admin to proceed with an order.
+ */
+export const addSupplierNotice = (orderId, noticeText) => 
+  api.patch(`/api/supplier/purchase-orders/${orderId}/notice`, { notice: noticeText }).then((res) => res.data);

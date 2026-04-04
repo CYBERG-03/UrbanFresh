@@ -24,6 +24,8 @@ public class PurchaseOrderDto {
     private String brandName;
     private PurchaseOrderStatus status;
     private String estimatedDeliveryTimeline;
+    private String rejectionReason;
+    private String supplierNotice;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<PurchaseOrderItemDto> items;
