@@ -1,6 +1,8 @@
 package com.urbanfresh.service.impl;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -77,9 +79,11 @@ public class ExpiryServiceImpl implements ExpiryService {
         return new ExpiryBucketResponse(within1Day, within7Days, within30Days, total);
     }
 
-    /** Calculates days from today to the product's expiry date (0 = expires today). */
+    /** Calculates days from today to the product's expiry date (0 = expires today).
+     *  Uses ChronoUnit.DAYS for exact elapsed days — Period.getDays() only returns
+     *  the days component and produces 0 for cross-month boundaries (e.g. April 5 → May 5). */
     private long daysUntil(LocalDate today, Product product) {
-        return today.until(product.getExpiryDate()).getDays();
+        return ChronoUnit.DAYS.between(today, product.getExpiryDate());
     }
 
     /** Maps a Product entity + computed daysUntilExpiry to the lightweight response DTO. */
