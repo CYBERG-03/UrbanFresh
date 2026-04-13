@@ -29,4 +29,17 @@ public interface LoyaltyService {
      * @param orderTotal the order's total amount in LKR
      */
     void awardPoints(User customer, BigDecimal orderTotal);
+
+    /**
+     * Redeem loyalty points for a discount on an order.
+     * Conversion rule: 1 point = Rs. 5 discount.
+     * Uses a pessimistic write lock to prevent concurrent double-redemption.
+     *
+     * @param customer       the customer redeeming points
+     * @param pointsToRedeem number of points the customer wants to apply (must be > 0)
+     * @param orderTotal     the order total before discount; discount cannot exceed this
+     * @return the discount amount in LKR to subtract from the order total
+     * @throws InsufficientLoyaltyPointsException if balance is insufficient or discount exceeds order total
+     */
+    BigDecimal redeemPoints(User customer, int pointsToRedeem, BigDecimal orderTotal);
 }
