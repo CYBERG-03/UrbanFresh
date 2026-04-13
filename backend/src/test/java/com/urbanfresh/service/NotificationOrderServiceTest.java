@@ -44,6 +44,7 @@ class NotificationOrderServiceTest {
     @Mock private OrderStatusHistoryRepository orderStatusHistoryRepository;
     @Mock private ProductRepository productRepository;
     @Mock private UserRepository userRepository;
+    @Mock private LoyaltyService loyaltyService;
     @Mock private NotificationService notificationService;
 
     @InjectMocks
