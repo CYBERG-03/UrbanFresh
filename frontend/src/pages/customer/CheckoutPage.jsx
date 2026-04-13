@@ -157,7 +157,8 @@ export default function CheckoutPage() {
             cart={cart}
             orderTotal={orderTotal}
             orderDiscount={orderDiscount}
-            orderItemsSnapshot={orderItemsSnapshot} // ← new prop
+            pointsToRedeem={pointsToRedeem}
+            orderItemsSnapshot={orderItemsSnapshot}
             deliveryAddress={deliveryAddress}
             showAddress={step === 'payment'}
           />
@@ -393,14 +394,21 @@ function buildOrderSuccessPath(orderId, paymentStatus) {
 // Order summary panel (right sidebar — mirrors CartPage layout)
 // ─────────────────────────────────────────────────────────────────────────────
 
-function OrderSummaryPanel({ cart, orderTotal, orderDiscount, orderItemsSnapshot, deliveryAddress, showAddress }) {
+function OrderSummaryPanel({ cart, orderTotal, orderDiscount, pointsToRedeem, orderItemsSnapshot, deliveryAddress, showAddress }) {
+  const LKR_PER_POINT = 5;
+
   // Use orderTotal snapshot (set at order placement) so the total stays correct
   // after clearCart() zeroes cart.totalAmount in the payment step.
-  const displayTotal    = orderTotal > 0 ? orderTotal : cart.totalAmount;
-  const displayDiscount = orderDiscount > 0 ? orderDiscount : 0;
-  const subtotalBeforeDiscount = displayDiscount > 0
-    ? displayTotal + displayDiscount
-    : (orderTotal > 0 ? orderTotal : cart.totalAmount);
+  const rawTotal = orderTotal > 0 ? orderTotal : cart.totalAmount;
+
+  // During address step: discount is not yet confirmed — compute from pointsToRedeem.
+  // After order is placed: use the server-confirmed orderDiscount.
+  const pendingDiscount   = (orderDiscount <= 0 && pointsToRedeem > 0)
+    ? pointsToRedeem * LKR_PER_POINT
+    : 0;
+  const displayDiscount   = orderDiscount > 0 ? orderDiscount : pendingDiscount;
+  const subtotalBeforeDiscount = rawTotal + displayDiscount;
+  const displayTotal      = rawTotal; // rawTotal already reflects the confirmed discount post-placement
 
   // Use snapshot items if available (during payment step), else cart items
   const displayItems = (orderItemsSnapshot && orderItemsSnapshot.length > 0)
@@ -426,23 +434,23 @@ function OrderSummaryPanel({ cart, orderTotal, orderDiscount, orderItemsSnapshot
           ))}
         </div>
 
-        <div className="border-t border-gray-100 pt-4 flex justify-between font-bold text-gray-800">
-          <span>Total</span>
-          <span className="text-green-700">{formatAmount(displayTotal)}</span>
-        </div>
-
         {displayDiscount > 0 && (
-          <div className="border-t border-gray-100 pt-3 space-y-1 text-sm">
+          <div className="space-y-1 text-sm">
             <div className="flex justify-between text-gray-500">
-              <span>Subtotal before discount</span>
+              <span>Items subtotal</span>
               <span>{formatAmount(subtotalBeforeDiscount)}</span>
             </div>
             <div className="flex justify-between text-green-700 font-medium">
-              <span>Loyalty discount</span>
+              <span>🎁 Loyalty discount{pointsToRedeem > 0 && orderDiscount <= 0 ? ` (${pointsToRedeem} pts)` : ''}</span>
               <span>− {formatAmount(displayDiscount)}</span>
             </div>
           </div>
         )}
+
+        <div className="border-t border-gray-100 pt-4 flex justify-between font-bold text-gray-800">
+          <span>Total</span>
+          <span className="text-green-700">{formatAmount(displayTotal)}</span>
+        </div>
 
         {showAddress && deliveryAddress && (
           <div className="border-t border-gray-100 pt-4">
