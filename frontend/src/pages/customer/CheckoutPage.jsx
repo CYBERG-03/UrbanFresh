@@ -9,7 +9,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
 import {
   Elements,
@@ -37,12 +37,17 @@ export default function CheckoutPage() {
   const { cart, clearCart, loading: cartLoading } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [deliveryAddress, setDeliveryAddress] = useState(user?.address || '');
   const [addressError, setAddressError] = useState('');
 
+  // Loyalty points passed from CartPage via navigation state
+  const pointsToRedeem = location.state?.pointsToRedeem ?? 0;
+
   const [orderId, setOrderId]             = useState(null);
   const [orderTotal, setOrderTotal]       = useState(0);   // snapshot before cart is cleared
+  const [orderDiscount, setOrderDiscount] = useState(0);   // snapshot of loyalty discount applied
   const [orderItemsSnapshot, setOrderItemsSnapshot] = useState([]); // snapshot of items
   const [orderSnapshot, setOrderSnapshot] = useState(null);
   const [stripePromise, setStripePromise] = useState(null);
@@ -72,8 +77,8 @@ export default function CheckoutPage() {
         quantity:  item.quantity,
       }));
 
-      // Place order first
-      const order = await placeOrder(deliveryAddress.trim(), orderItems);
+      // Place order first (pass loyalty points to redeem)
+      const order = await placeOrder(deliveryAddress.trim(), orderItems, pointsToRedeem);
 
       // Create PaymentIntent with the new orderId
       const { clientSecret: secret, publishableKey } = await createPaymentIntent(order.orderId);
@@ -83,8 +88,9 @@ export default function CheckoutPage() {
       setStripePromise(loadStripe(publishableKey));
       setClientSecret(secret);
       setOrderId(order.orderId);
-      setOrderTotal(order.totalAmount);   // ← captured from order, not cart
-      setOrderItemsSnapshot(order.items); // ← capture items from order response
+      setOrderTotal(order.totalAmount);     // ← already discounted
+      setOrderDiscount(order.discountAmount ?? 0);
+      setOrderItemsSnapshot(order.items);   // ← capture items from order response
       setOrderSnapshot(order);
       setStep('payment');
 
@@ -150,6 +156,7 @@ export default function CheckoutPage() {
           <OrderSummaryPanel
             cart={cart}
             orderTotal={orderTotal}
+            orderDiscount={orderDiscount}
             orderItemsSnapshot={orderItemsSnapshot} // ← new prop
             deliveryAddress={deliveryAddress}
             showAddress={step === 'payment'}
@@ -386,10 +393,14 @@ function buildOrderSuccessPath(orderId, paymentStatus) {
 // Order summary panel (right sidebar — mirrors CartPage layout)
 // ─────────────────────────────────────────────────────────────────────────────
 
-function OrderSummaryPanel({ cart, orderTotal, orderItemsSnapshot, deliveryAddress, showAddress }) {
+function OrderSummaryPanel({ cart, orderTotal, orderDiscount, orderItemsSnapshot, deliveryAddress, showAddress }) {
   // Use orderTotal snapshot (set at order placement) so the total stays correct
   // after clearCart() zeroes cart.totalAmount in the payment step.
-  const displayTotal = orderTotal > 0 ? orderTotal : cart.totalAmount;
+  const displayTotal    = orderTotal > 0 ? orderTotal : cart.totalAmount;
+  const displayDiscount = orderDiscount > 0 ? orderDiscount : 0;
+  const subtotalBeforeDiscount = displayDiscount > 0
+    ? displayTotal + displayDiscount
+    : (orderTotal > 0 ? orderTotal : cart.totalAmount);
 
   // Use snapshot items if available (during payment step), else cart items
   const displayItems = (orderItemsSnapshot && orderItemsSnapshot.length > 0)
@@ -419,6 +430,19 @@ function OrderSummaryPanel({ cart, orderTotal, orderItemsSnapshot, deliveryAddre
           <span>Total</span>
           <span className="text-green-700">{formatAmount(displayTotal)}</span>
         </div>
+
+        {displayDiscount > 0 && (
+          <div className="border-t border-gray-100 pt-3 space-y-1 text-sm">
+            <div className="flex justify-between text-gray-500">
+              <span>Subtotal before discount</span>
+              <span>{formatAmount(subtotalBeforeDiscount)}</span>
+            </div>
+            <div className="flex justify-between text-green-700 font-medium">
+              <span>Loyalty discount</span>
+              <span>− {formatAmount(displayDiscount)}</span>
+            </div>
+          </div>
+        )}
 
         {showAddress && deliveryAddress && (
           <div className="border-t border-gray-100 pt-4">
