@@ -625,6 +625,8 @@ public class OrderServiceImpl implements OrderService {
                                 .itemCount(order.getItems() != null ? order.getItems().size() : 0)
                                 .itemsSummary(toItemsSummary(order))
                                 .totalAmount(order.getTotalAmount())
+                                .discountAmount(order.getDiscountAmount())
+                                .pointsRedeemed(order.getPointsRedeemed())
                                 .paymentStatus(resolvePersistedPaymentStatus(order))
                                 .paymentMethod(resolveDeliveryPaymentMethod())
                                 .createdAt(order.getCreatedAt())
@@ -734,6 +736,8 @@ public class OrderServiceImpl implements OrderService {
                                 .orderStatus(order.getStatus().name())
                                 .paymentStatus(resolvePersistedPaymentStatus(order))
                                 .totalAmount(order.getTotalAmount())
+                                .discountAmount(order.getDiscountAmount())
+                                .pointsRedeemed(order.getPointsRedeemed())
                                 .orderDate(order.getCreatedAt())
                                 .deliveryPersonId(deliveryPerson != null ? deliveryPerson.getId() : null)
                                 .deliveryPersonName(deliveryPerson != null ? deliveryPerson.getName() : null)
@@ -766,7 +770,7 @@ public class OrderServiceImpl implements OrderService {
 
                 // Payment/tax modules are not integrated yet; keep explicit zero values
                 // so the review response remains schema-stable for current frontend screens.
-                BigDecimal discounts = BigDecimal.ZERO;
+                BigDecimal discounts = order.getDiscountAmount();
                 BigDecimal taxes = BigDecimal.ZERO;
                 BigDecimal shippingCost = BigDecimal.ZERO;
 
@@ -787,6 +791,7 @@ public class OrderServiceImpl implements OrderService {
                                 .deliveryPersonId(deliveryPerson != null ? deliveryPerson.getId() : null)
                                 .deliveryPersonName(deliveryPerson != null ? deliveryPerson.getName() : null)
                                 .orderDate(order.getCreatedAt())
+                                .pointsRedeemed(order.getPointsRedeemed())
                                 .lastUpdatedDate(resolveLastUpdatedDate(order, historyRows))
                                 .customer(AdminOrderReviewResponse.CustomerInfo.builder()
                                                 .customerName(order.getCustomer().getName())
@@ -877,6 +882,8 @@ public class OrderServiceImpl implements OrderService {
                                                 .customerPhone(order.getCustomer() != null ? order.getCustomer().getPhone() : null)
                                                 .deliveryAddress(order.getDeliveryAddress())
                                                 .totalAmount(order.getTotalAmount())
+                                                .discountAmount(order.getDiscountAmount())
+                                                .pointsRedeemed(order.getPointsRedeemed())
                                                 .paymentStatus(resolvePersistedPaymentStatus(order))
                                                 .paymentMethod(resolveDeliveryPaymentMethod())
                                                 .items(toOrderItemResponses(order))

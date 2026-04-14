@@ -98,7 +98,8 @@ public class ExpiryServiceImpl implements ExpiryService {
                 product.getUnit(),
                 product.getStockQuantity(),
                 product.getExpiryDate(),
-                daysUntil(today, product)
+                daysUntil(today, product),
+                product.getDiscountPercentage()
         );
     }
 }
