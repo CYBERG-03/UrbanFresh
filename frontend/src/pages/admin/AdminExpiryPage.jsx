@@ -68,13 +68,19 @@ export default function AdminExpiryPage() {
    * Handler to apply/update discount for a product.
    * Calls backend API to update the product with new discountPercentage.
    */
-  const handleApplyDiscount = async (product) => {
-    if (!editingDiscount && editingDiscount !== '0') {
-      toast.error('Please enter a discount percentage');
-      return;
+  const handleApplyDiscount = async (product, directValue = null) => {
+    let discountValue;
+    
+    if (directValue !== null) {
+      discountValue = parseInt(directValue, 10);
+    } else {
+      if (!editingDiscount && editingDiscount !== '0') {
+        toast.error('Please enter a discount percentage');
+        return;
+      }
+      discountValue = parseInt(editingDiscount, 10);
     }
 
-    const discountValue = parseInt(editingDiscount, 10);
     if (isNaN(discountValue) || discountValue < 0 || discountValue > 100) {
       toast.error('Discount must be between 0 and 100');
       return;
@@ -106,8 +112,10 @@ export default function AdminExpiryPage() {
       }));
 
       toast.success(`Discount applied successfully`);
-      setEditingProductId(null);
-      setEditingDiscount('');
+      if (directValue === null) {
+        setEditingProductId(null);
+        setEditingDiscount('');
+      }
     } catch (err) {
       console.error('Failed to apply discount:', err);
       toast.error('Failed to apply discount. Please try again.');
@@ -178,7 +186,7 @@ export default function AdminExpiryPage() {
                     setEditingDiscount(product.discountPercentage || '');
                   }}
                   onDiscountChange={(value) => setEditingDiscount(value)}
-                  onApply={() => handleApplyDiscount(product)}
+                  onApply={(val) => handleApplyDiscount(product, val)}
                   onCancel={() => {
                     setEditingProductId(null);
                     setEditingDiscount('');
@@ -263,7 +271,7 @@ export default function AdminExpiryPage() {
         {isEditing ? (
           <div className="flex items-center justify-center gap-2">
             <button
-              onClick={onApply}
+              onClick={() => onApply(null)}
               disabled={isApplying}
               className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-xs font-medium py-1 px-3 rounded transition-colors"
             >
@@ -278,12 +286,22 @@ export default function AdminExpiryPage() {
             </button>
           </div>
         ) : (
-          <button
-            onClick={onEditStart}
-            className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium py-1 px-3 rounded transition-colors"
-          >
-            Edit
-          </button>
+          <div className="flex items-center justify-center gap-2">
+            <button
+              onClick={onEditStart}
+              className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium py-1 px-3 rounded transition-colors"
+            >
+              Edit
+            </button>
+            <button
+              onClick={() => onApply(suggestedDiscount)}
+              disabled={isApplying}
+              className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-medium py-1 px-3 rounded transition-colors whitespace-nowrap"
+              title={`Apply suggested discount of ${suggestedDiscount}%`}
+            >
+              {isApplying ? 'Applying...' : `1-Click Apply ${suggestedDiscount}%`}
+            </button>
+          </div>
         )}
       </td>
     </tr>
