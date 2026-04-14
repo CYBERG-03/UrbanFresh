@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useCart } from '../../context/CartContext';
 import Navbar from '../../components/Navbar';
-import { formatAmount, formatPrice } from '../../utils/priceUtils';
+import { formatAmount, formatPrice, calculateDiscountedPrice } from '../../utils/priceUtils';
 import { getLoyaltyPoints } from '../../services/orderService';
 
 /**
@@ -150,7 +150,19 @@ function CartItemRow({ item, onUpdate, onRemove }) {
           <div>
             <p className="font-semibold text-gray-800 truncate">{item.productName}</p>
             <p className="text-sm text-gray-500 mt-0.5">
-              {formatPrice(item.unitPrice, item.unit)}
+              {item.productDiscountPercentage ? (
+                <>
+                  <span className="line-through">{formatPrice(item.unitPrice, item.unit)}</span>
+                  {' '}
+                  <span className="text-green-600 font-semibold">
+                    {formatPrice(calculateDiscountedPrice(item.unitPrice, item.productDiscountPercentage), item.unit)}
+                    {' '}
+                    <span className="text-xs bg-green-50 px-1 rounded">({item.productDiscountPercentage}% OFF)</span>
+                  </span>
+                </>
+              ) : (
+                formatPrice(item.unitPrice, item.unit)
+              )}
             </p>
             {/* Flag out-of-stock items so the customer knows before checkout */}
             {!item.inStock && (

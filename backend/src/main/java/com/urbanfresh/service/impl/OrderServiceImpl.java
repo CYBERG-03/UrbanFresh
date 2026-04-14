@@ -173,14 +173,27 @@ public class OrderServiceImpl implements OrderService {
             // Deduct inventory
             product.setStockQuantity(product.getStockQuantity() - itemRequest.getQuantity());
 
-            BigDecimal lineTotal = product.getPrice()
+            // Apply product discount if present, then calculate line total from discounted unit price
+            BigDecimal unitPrice = product.getPrice();
+            Integer discountPercentage = product.getDiscountPercentage() != null ? product.getDiscountPercentage() : 0;
+            BigDecimal discountedUnitPrice = unitPrice;
+            
+            if (discountPercentage > 0) {
+                // discountedUnitPrice = unitPrice * (1 - discount% / 100)
+                discountedUnitPrice = unitPrice.multiply(
+                    BigDecimal.valueOf(100 - discountPercentage)
+                ).divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
+            }
+
+            BigDecimal lineTotal = discountedUnitPrice
                     .multiply(BigDecimal.valueOf(itemRequest.getQuantity()));
             total = total.add(lineTotal);
 
             orderItems.add(OrderItem.builder()
                     .product(product)
                     .productName(product.getName())       // snapshot — survives product edits
-                    .unitPrice(product.getPrice())         // snapshot — survives price changes
+                    .unitPrice(unitPrice)                  // snapshot of original price — survives edits
+                    .productDiscountPercentage(discountPercentage)  // snapshot of discount — preserves calcs
                     .quantity(itemRequest.getQuantity())
                     .lineTotal(lineTotal)
                     .build());
@@ -597,6 +610,7 @@ public class OrderServiceImpl implements OrderService {
                         .productId(item.getProduct() != null ? item.getProduct().getId() : null)
                         .productName(item.getProductName())
                         .unitPrice(item.getUnitPrice())
+                        .productDiscountPercentage(item.getProductDiscountPercentage())
                         .quantity(item.getQuantity())
                         .lineTotal(item.getLineTotal())
                         .build())
