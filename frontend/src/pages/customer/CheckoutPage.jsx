@@ -9,7 +9,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
 import {
   Elements,
@@ -37,12 +37,17 @@ export default function CheckoutPage() {
   const { cart, clearCart, loading: cartLoading } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [deliveryAddress, setDeliveryAddress] = useState(user?.address || '');
   const [addressError, setAddressError] = useState('');
 
+  // Loyalty points passed from CartPage via navigation state
+  const pointsToRedeem = location.state?.pointsToRedeem ?? 0;
+
   const [orderId, setOrderId]             = useState(null);
   const [orderTotal, setOrderTotal]       = useState(0);   // snapshot before cart is cleared
+  const [orderDiscount, setOrderDiscount] = useState(0);   // snapshot of loyalty discount applied
   const [orderItemsSnapshot, setOrderItemsSnapshot] = useState([]); // snapshot of items
   const [orderSnapshot, setOrderSnapshot] = useState(null);
   const [stripePromise, setStripePromise] = useState(null);
@@ -72,8 +77,8 @@ export default function CheckoutPage() {
         quantity:  item.quantity,
       }));
 
-      // Place order first
-      const order = await placeOrder(deliveryAddress.trim(), orderItems);
+      // Place order first (pass loyalty points to redeem)
+      const order = await placeOrder(deliveryAddress.trim(), orderItems, pointsToRedeem);
 
       // Create PaymentIntent with the new orderId
       const { clientSecret: secret, publishableKey } = await createPaymentIntent(order.orderId);
@@ -83,8 +88,9 @@ export default function CheckoutPage() {
       setStripePromise(loadStripe(publishableKey));
       setClientSecret(secret);
       setOrderId(order.orderId);
-      setOrderTotal(order.totalAmount);   // ← captured from order, not cart
-      setOrderItemsSnapshot(order.items); // ← capture items from order response
+      setOrderTotal(order.totalAmount);     // ← already discounted
+      setOrderDiscount(order.discountAmount ?? 0);
+      setOrderItemsSnapshot(order.items);   // ← capture items from order response
       setOrderSnapshot(order);
       setStep('payment');
 
@@ -150,7 +156,9 @@ export default function CheckoutPage() {
           <OrderSummaryPanel
             cart={cart}
             orderTotal={orderTotal}
-            orderItemsSnapshot={orderItemsSnapshot} // ← new prop
+            orderDiscount={orderDiscount}
+            pointsToRedeem={pointsToRedeem}
+            orderItemsSnapshot={orderItemsSnapshot}
             deliveryAddress={deliveryAddress}
             showAddress={step === 'payment'}
           />
@@ -386,10 +394,21 @@ function buildOrderSuccessPath(orderId, paymentStatus) {
 // Order summary panel (right sidebar — mirrors CartPage layout)
 // ─────────────────────────────────────────────────────────────────────────────
 
-function OrderSummaryPanel({ cart, orderTotal, orderItemsSnapshot, deliveryAddress, showAddress }) {
+function OrderSummaryPanel({ cart, orderTotal, orderDiscount, pointsToRedeem, orderItemsSnapshot, deliveryAddress, showAddress }) {
+  const LKR_PER_POINT = 5;
+
   // Use orderTotal snapshot (set at order placement) so the total stays correct
   // after clearCart() zeroes cart.totalAmount in the payment step.
-  const displayTotal = orderTotal > 0 ? orderTotal : cart.totalAmount;
+  const rawTotal = orderTotal > 0 ? orderTotal : cart.totalAmount;
+
+  // During address step: discount is not yet confirmed — compute from pointsToRedeem.
+  // After order is placed: use the server-confirmed orderDiscount.
+  const pendingDiscount   = (orderDiscount <= 0 && pointsToRedeem > 0)
+    ? pointsToRedeem * LKR_PER_POINT
+    : 0;
+  const displayDiscount   = orderDiscount > 0 ? orderDiscount : pendingDiscount;
+  const subtotalBeforeDiscount = rawTotal + displayDiscount;
+  const displayTotal      = rawTotal; // rawTotal already reflects the confirmed discount post-placement
 
   // Use snapshot items if available (during payment step), else cart items
   const displayItems = (orderItemsSnapshot && orderItemsSnapshot.length > 0)
@@ -414,6 +433,19 @@ function OrderSummaryPanel({ cart, orderTotal, orderItemsSnapshot, deliveryAddre
             </div>
           ))}
         </div>
+
+        {displayDiscount > 0 && (
+          <div className="space-y-1 text-sm">
+            <div className="flex justify-between text-gray-500">
+              <span>Items subtotal</span>
+              <span>{formatAmount(subtotalBeforeDiscount)}</span>
+            </div>
+            <div className="flex justify-between text-green-700 font-medium">
+              <span>🎁 Loyalty discount{pointsToRedeem > 0 && orderDiscount <= 0 ? ` (${pointsToRedeem} pts)` : ''}</span>
+              <span>− {formatAmount(displayDiscount)}</span>
+            </div>
+          </div>
+        )}
 
         <div className="border-t border-gray-100 pt-4 flex justify-between font-bold text-gray-800">
           <span>Total</span>

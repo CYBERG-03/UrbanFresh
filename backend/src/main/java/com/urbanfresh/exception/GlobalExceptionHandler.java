@@ -370,6 +370,19 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Handle insufficient or over-limit loyalty points redemption → 400 Bad Request.
+     */
+    @ExceptionHandler(InsufficientLoyaltyPointsException.class)
+    public ResponseEntity<ApiErrorResponse> handleInsufficientLoyaltyPoints(InsufficientLoyaltyPointsException ex) {
+        ApiErrorResponse response = ApiErrorResponse.builder()
+                .status(HttpStatus.BAD_REQUEST.value())
+                .message(ex.getMessage())
+                .timestamp(LocalDateTime.now())
+                .build();
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    /**
      * Catch-all for unexpected errors → 500 Internal Server Error.
      * Logs the actual exception but returns a generic message to the client.
      */

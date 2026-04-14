@@ -316,6 +316,9 @@ function StatusBanner({ title, subtitle, tone }) {
 
 function OrderSummary({ order }) {
   const items = Array.isArray(order?.items) ? order.items : [];
+  const discount     = Number(order?.discountAmount ?? 0);
+  const pointsUsed   = Number(order?.pointsRedeemed ?? 0);
+  const subtotal     = Number(order?.totalAmount ?? 0) + discount;
 
   return (
     <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-6" aria-label="Order summary">
@@ -340,9 +343,23 @@ function OrderSummary({ order }) {
         </ul>
       )}
 
-      <div className="mt-5 pt-4 border-t border-gray-100 flex items-center justify-between">
-        <span className="text-sm font-semibold text-gray-700">Total Amount</span>
-        <span className="text-lg font-extrabold text-green-700">{formatAmount(order.totalAmount ?? 0)}</span>
+      <div className="mt-5 pt-4 border-t border-gray-100 space-y-2">
+        {discount > 0 && (
+          <>
+            <div className="flex items-center justify-between text-sm text-gray-500">
+              <span>Items subtotal</span>
+              <span>{formatAmount(subtotal)}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm text-green-700 font-medium">
+              <span>🎁 Loyalty discount ({pointsUsed} pts)</span>
+              <span>− {formatAmount(discount)}</span>
+            </div>
+          </>
+        )}
+        <div className="flex items-center justify-between pt-1">
+          <span className="text-sm font-semibold text-gray-700">Total Amount</span>
+          <span className="text-lg font-extrabold text-green-700">{formatAmount(order.totalAmount ?? 0)}</span>
+        </div>
       </div>
     </section>
   );

@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useCart } from '../../context/CartContext';
 import Navbar from '../../components/Navbar';
 import { formatAmount, formatPrice } from '../../utils/priceUtils';
+import { getLoyaltyPoints } from '../../services/orderService';
 
 /**
  * Page Layer – Customer cart page.
@@ -202,7 +203,7 @@ function CartItemRow({ item, onUpdate, onRemove }) {
 }
 
 /**
- * Sticky order summary card: item count, grand total, checkout button.
+ * Sticky order summary card: item count, grand total, loyalty points widget, and checkout button.
  *
  * @param {Object}   cart     - CartResponse: { items, totalAmount, itemCount }
  * @param {Function} navigate - react-router navigate function
@@ -210,10 +211,55 @@ function CartItemRow({ item, onUpdate, onRemove }) {
 function OrderSummary({ cart, navigate }) {
   const MIN_ORDER_LKR = 200;
 
+  const [loyaltyData, setLoyaltyData]   = useState(null);
+  const [pointsInput, setPointsInput]   = useState('');
+  const [appliedPoints, setAppliedPoints] = useState(0);
+  const [applyError, setApplyError]     = useState('');
+
+  // Fetch loyalty balance once — silently ignore if not available
+  useEffect(() => {
+    getLoyaltyPoints()
+      .then((res) => setLoyaltyData(res.data))
+      .catch(() => {/* points display is non-critical */});
+  }, []);
+
+  const availablePoints = loyaltyData?.totalPoints ?? 0;
+  const LKR_PER_POINT   = 5;
+  const maxRedeemable   = Math.floor(cart.totalAmount / LKR_PER_POINT);
+
+  const handleApplyPoints = () => {
+    const pts = parseInt(pointsInput, 10);
+    setApplyError('');
+
+    if (!pts || pts <= 0) {
+      setApplyError('Enter a valid number of points.');
+      return;
+    }
+    if (pts > availablePoints) {
+      setApplyError(`You only have ${availablePoints} point${availablePoints !== 1 ? 's' : ''} available.`);
+      return;
+    }
+    if (pts > maxRedeemable) {
+      setApplyError(`Maximum redeemable for this order is ${maxRedeemable} point${maxRedeemable !== 1 ? 's' : ''}.`);
+      return;
+    }
+    setAppliedPoints(pts);
+    toast.success(`${pts} loyalty point${pts !== 1 ? 's' : ''} applied!`);
+  };
+
+  const handleRemovePoints = () => {
+    setAppliedPoints(0);
+    setPointsInput('');
+    setApplyError('');
+  };
+
+  const discount     = appliedPoints * LKR_PER_POINT;
+  const payableTotal = cart.totalAmount - discount;
+
   // Disable checkout for out-of-stock items or below the minimum order amount
-  const hasOutOfStockItem   = cart.items.some((item) => !item.inStock);
-  const isBelowMinimum      = cart.totalAmount < MIN_ORDER_LKR;
-  const cannotCheckout      = hasOutOfStockItem || isBelowMinimum;
+  const hasOutOfStockItem = cart.items.some((item) => !item.inStock);
+  const isBelowMinimum    = payableTotal < MIN_ORDER_LKR;
+  const cannotCheckout    = hasOutOfStockItem || isBelowMinimum;
 
   return (
     <div className="lg:w-80 flex-shrink-0">
@@ -225,6 +271,12 @@ function OrderSummary({ cart, navigate }) {
             <span>Items ({cart.itemCount})</span>
             <span>{formatAmount(cart.totalAmount)}</span>
           </div>
+          {appliedPoints > 0 && (
+            <div className="flex justify-between text-green-700 font-medium">
+              <span>Loyalty discount ({appliedPoints} pts)</span>
+              <span>− {formatAmount(discount)}</span>
+            </div>
+          )}
           <div className="flex justify-between">
             <span>Delivery</span>
             <span className="text-green-600 font-medium">Calculated at checkout</span>
@@ -233,8 +285,57 @@ function OrderSummary({ cart, navigate }) {
 
         <div className="border-t border-gray-100 pt-4 flex justify-between font-bold text-gray-800">
           <span>Subtotal</span>
-          <span className="text-green-700">{formatAmount(cart.totalAmount)}</span>
+          <span className="text-green-700">{formatAmount(payableTotal)}</span>
         </div>
+
+        {/* ── Loyalty points widget ── */}
+        {availablePoints > 0 && (
+          <div className="border border-green-200 rounded-xl bg-green-50 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-green-800">🎁 Loyalty Points</p>
+              <span className="text-xs bg-green-100 text-green-700 font-medium px-2 py-0.5 rounded-full">
+                {availablePoints} pts available
+              </span>
+            </div>
+            <p className="text-xs text-green-700">1 point = Rs. 5 discount</p>
+
+            {appliedPoints > 0 ? (
+              <div className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-green-200">
+                <span className="text-sm text-green-800 font-medium">
+                  {appliedPoints} pts → − {formatAmount(discount)}
+                </span>
+                <button
+                  onClick={handleRemovePoints}
+                  className="text-xs text-red-400 hover:text-red-600 underline ml-2"
+                >
+                  Remove
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  min={1}
+                  max={Math.min(availablePoints, maxRedeemable)}
+                  value={pointsInput}
+                  onChange={(e) => { setPointsInput(e.target.value); setApplyError(''); }}
+                  placeholder="Points to apply"
+                  className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400"
+                />
+                <button
+                  onClick={handleApplyPoints}
+                  className="px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  Apply
+                </button>
+              </div>
+            )}
+
+            {applyError && (
+              <p className="text-xs text-red-500">{applyError}</p>
+            )}
+          </div>
+        )}
 
         {/* Minimum order notice */}
         {isBelowMinimum && (
@@ -243,7 +344,7 @@ function OrderSummary({ cart, navigate }) {
               Minimum order is Rs. {MIN_ORDER_LKR}.00
             </p>
             <p className="text-xs text-amber-600 mt-0.5">
-              Add Rs. {(MIN_ORDER_LKR - cart.totalAmount).toFixed(2)} more to proceed.
+              Add Rs. {(MIN_ORDER_LKR - payableTotal).toFixed(2)} more to proceed.
             </p>
           </div>
         )}
@@ -257,7 +358,7 @@ function OrderSummary({ cart, navigate }) {
 
         <button
           disabled={cannotCheckout}
-          onClick={() => navigate('/checkout')}
+          onClick={() => navigate('/checkout', { state: { pointsToRedeem: appliedPoints } })}
           className="w-full py-3 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Proceed to Checkout

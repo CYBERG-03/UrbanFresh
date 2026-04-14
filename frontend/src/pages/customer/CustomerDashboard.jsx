@@ -26,6 +26,7 @@ export default function CustomerDashboard() {
   const [selectedOrderForPayment, setSelectedOrderForPayment] = useState(null);
 
   const { notifications, unreadCount, markRead, markAllRead } = useNotifications();
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   /** Load orders and loyalty points in parallel on mount.
    * allSettled ensures partial success: if one call fails, the other section
@@ -100,63 +101,46 @@ export default function CustomerDashboard() {
           </div>
         </div>
 
-        {/* ── Notifications Section ── */}
-        <div className="bg-white rounded-2xl shadow-sm p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-800">
-              🔔 Notifications
-              {unreadCount > 0 && (
-                <span className="ml-2 inline-flex items-center justify-center min-w-[20px] h-5 bg-red-500 text-white text-xs font-bold rounded-full px-1">
-                  {unreadCount}
-                </span>
-              )}
-            </h2>
-            {unreadCount > 0 && (
-              <button
-                onClick={markAllRead}
-                className="text-xs text-green-600 hover:text-green-800 font-medium transition-colors"
-              >
-                Mark all as read
-              </button>
-            )}
-          </div>
-
-          {notifications.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-6">No notifications yet</p>
-          ) : (
-            <div className="space-y-2">
-              {notifications.map((n) => (
-                <div
-                  key={n.id}
-                  className={`flex items-start gap-3 rounded-xl px-4 py-3 ${
-                    n.read ? 'bg-gray-50' : 'bg-green-50 border border-green-100'
-                  }`}
-                >
-                  <span className="text-base mt-0.5" aria-hidden="true">
-                    {n.read ? '📭' : '📬'}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-700 leading-snug">{n.message}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      {new Date(n.createdAt).toLocaleString('en-LK', {
-                        dateStyle: 'medium',
-                        timeStyle: 'short',
-                      })}
-                    </p>
-                  </div>
-                  {!n.read && (
-                    <button
-                      onClick={() => markRead(n.id)}
-                      className="text-xs text-green-600 hover:text-green-800 font-medium whitespace-nowrap mt-0.5 transition-colors"
-                    >
-                      Mark read
-                    </button>
-                  )}
-                </div>
-              ))}
+        {/* ── Notifications compact tile ── */}
+        <button
+          onClick={() => setNotificationsOpen(true)}
+          className="w-full bg-white rounded-2xl shadow-sm px-6 py-4 flex items-center justify-between hover:shadow-md transition-shadow text-left"
+          aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-xl" aria-hidden="true">🔔</span>
+            <div>
+              <p className="text-sm font-semibold text-gray-800">Notifications</p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {notifications.length === 0
+                  ? 'No notifications yet'
+                  : unreadCount > 0
+                    ? `${unreadCount} unread of ${notifications.length}`
+                    : `${notifications.length} notification${notifications.length !== 1 ? 's' : ''}`}
+              </p>
             </div>
-          )}
-        </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {unreadCount > 0 && (
+              <span className="inline-flex items-center justify-center min-w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full px-1">
+                {unreadCount}
+              </span>
+            )}
+            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </button>
+
+        {notificationsOpen && (
+          <NotificationsOverlay
+            notifications={notifications}
+            unreadCount={unreadCount}
+            markRead={markRead}
+            markAllRead={markAllRead}
+            onClose={() => setNotificationsOpen(false)}
+          />
+        )}
 
         {/* ── Loyalty Points Section ── */}
         {loyalty && (
@@ -166,9 +150,11 @@ export default function CustomerDashboard() {
               <LoyaltyStat label="Available Balance" value={loyalty.totalPoints} highlight />
               <LoyaltyStat label="Total Earned" value={loyalty.earnedPoints} />
               <LoyaltyStat label="Redeemed" value={loyalty.redeemedPoints} />
-              {/* Placeholder tile for redemption — reserved for future sprint */}
-              <div className="bg-green-50 rounded-xl p-4 flex flex-col items-center justify-center border border-dashed border-green-300">
-                <p className="text-xs text-green-600 font-medium text-center">Redeem coming soon</p>
+              {/* Redemption tile — points can now be applied in the cart */}
+              <div className="bg-green-50 rounded-xl p-4 flex flex-col items-center justify-center border border-green-200">
+                <p className="text-2xl mb-1">🛒</p>
+                <p className="text-xs text-green-700 font-medium text-center leading-tight">Apply in Cart</p>
+                <p className="text-xs text-green-600 text-center mt-0.5">1 pt = Rs. 5 off</p>
               </div>
             </div>
             {/* Conversion rule displayed so customer understands how points accumulate */}
@@ -256,6 +242,99 @@ function LoyaltyStat({ label, value, highlight = false }) {
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Notifications overlay modal
+// ─────────────────────────────────────────────────────────────────────────────
+
+function NotificationsOverlay({ notifications, unreadCount, markRead, markAllRead, onClose }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Notifications"
+    >
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      {/* Panel */}
+      <div className="relative w-full sm:max-w-md bg-white rounded-t-2xl sm:rounded-2xl shadow-xl flex flex-col max-h-[85vh]">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <h2 className="text-base font-bold text-gray-800">
+            🔔 Notifications
+            {unreadCount > 0 && (
+              <span className="ml-2 inline-flex items-center justify-center min-w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full px-1">
+                {unreadCount}
+              </span>
+            )}
+          </h2>
+          <div className="flex items-center gap-3">
+            {unreadCount > 0 && (
+              <button
+                onClick={markAllRead}
+                className="text-xs text-green-600 hover:text-green-800 font-medium transition-colors"
+              >
+                Mark all as read
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              aria-label="Close notifications"
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* List */}
+        <div className="overflow-y-auto flex-1 px-4 py-3 space-y-2">
+          {notifications.length === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-10">No notifications yet</p>
+          ) : (
+            notifications.map((n) => (
+              <div
+                key={n.id}
+                className={`flex items-start gap-3 rounded-xl px-4 py-3 ${
+                  n.read ? 'bg-gray-50' : 'bg-green-50 border border-green-100'
+                }`}
+              >
+                <span className="text-base mt-0.5" aria-hidden="true">
+                  {n.read ? '📭' : '📬'}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-gray-700 leading-snug">{n.message}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {new Date(n.createdAt).toLocaleString('en-LK', {
+                      dateStyle: 'medium',
+                      timeStyle: 'short',
+                    })}
+                  </p>
+                </div>
+                {!n.read && (
+                  <button
+                    onClick={() => markRead(n.id)}
+                    className="text-xs text-green-600 hover:text-green-800 font-medium whitespace-nowrap mt-0.5 transition-colors"
+                  >
+                    Mark read
+                  </button>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /**
  * Displays a single order row with status badge, total, and expandable item list.
  * @param {{ orderId, status, deliveryAddress, totalAmount, createdAt, items[] }} order
@@ -336,6 +415,19 @@ function OrderCard({ order, onRetryPayment }) {
               ))}
             </tbody>
           </table>
+
+          {Number(order.discountAmount) > 0 && (
+            <div className="mt-2 pt-2 border-t border-gray-100 space-y-0.5 text-xs">
+              <div className="flex justify-between text-gray-500">
+                <span>Items subtotal</span>
+                <span>{formatAmount(Number(order.totalAmount) + Number(order.discountAmount))}</span>
+              </div>
+              <div className="flex justify-between text-green-700 font-medium">
+                <span>🎁 Loyalty discount ({order.pointsRedeemed} pts)</span>
+                <span>− {formatAmount(order.discountAmount)}</span>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

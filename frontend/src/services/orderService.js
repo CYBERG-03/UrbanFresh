@@ -11,10 +11,11 @@ import api from './api';
  *
  * @param {string} deliveryAddress - confirmed delivery address
  * @param {Array<{productId: number, quantity: number}>} items - cart items to order
- * @returns {Promise<OrderResponse>} created order with orderId, status, totalAmount, items
+ * @param {number} [pointsToRedeem=0] - loyalty points to apply as discount (1 pt = Rs. 5)
+ * @returns {Promise<OrderResponse>} created order with orderId, status, totalAmount, discountAmount, pointsRedeemed, items
  */
-export const placeOrder = (deliveryAddress, items) =>
-  api.post('/api/orders', { deliveryAddress, items }).then((res) => res.data);
+export const placeOrder = (deliveryAddress, items, pointsToRedeem = 0) =>
+  api.post('/api/orders', { deliveryAddress, items, pointsToRedeem }).then((res) => res.data);
 
 /**
  * Fetch the authenticated customer's order history, newest first.
