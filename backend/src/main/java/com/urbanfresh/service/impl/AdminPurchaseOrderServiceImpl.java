@@ -21,6 +21,7 @@ import com.urbanfresh.repository.BrandRepository;
 import com.urbanfresh.repository.ProductRepository;
 import com.urbanfresh.repository.PurchaseOrderRepository;
 import com.urbanfresh.service.AdminPurchaseOrderService;
+import com.urbanfresh.service.ProductBatchService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +37,7 @@ public class AdminPurchaseOrderServiceImpl implements AdminPurchaseOrderService 
     private final PurchaseOrderRepository purchaseOrderRepository;
     private final BrandRepository brandRepository;
     private final ProductRepository productRepository;
+    private final ProductBatchService productBatchService;
 
     @Override
     @Transactional
@@ -61,6 +63,9 @@ public class AdminPurchaseOrderServiceImpl implements AdminPurchaseOrderService 
                     .product(product)
                     .quantity(reqItem.getQuantity())
                     .unitPrice(product.getPrice()) // Snapshot current price for the PO
+                    .batchNumber(reqItem.getBatchNumber())
+                    .manufacturingDate(reqItem.getManufacturingDate())
+                    .supplierExpiryDate(reqItem.getSupplierExpiryDate())
                     .build();
         }).collect(Collectors.toList());
 
@@ -90,12 +95,33 @@ public class AdminPurchaseOrderServiceImpl implements AdminPurchaseOrderService 
             throw new IllegalStateException("Only DELIVERED orders can be marked as COMPLETED by admin.");
         }
 
-        // Increase inventory for each item
+        // Create a ProductBatch per item and increment legacy stockQuantity
         for (PurchaseOrderItem item : order.getItems()) {
             Product product = item.getProduct();
-            product.setStockQuantity(product.getStockQuantity() + item.getQuantity());
             product.setInventoryUpdatedBy(adminUsername);
             productRepository.save(product);
+
+            // Use batch number from PO item if provided; otherwise generate one from PO/item IDs
+            String batchNumber = (item.getBatchNumber() != null && !item.getBatchNumber().isBlank())
+                    ? item.getBatchNumber()
+                    : String.format("PO-%d-ITEM-%d", order.getId(), item.getId());
+
+            // Expiry date is required to create a batch; skip batch creation if not provided
+            if (item.getSupplierExpiryDate() != null) {
+                productBatchService.createBatch(
+                        product.getId(),
+                        batchNumber,
+                        item.getManufacturingDate(),
+                        item.getSupplierExpiryDate(),
+                        item.getQuantity(),
+                        item.getId()
+                );
+            } else {
+                // Legacy fallback: no expiry date supplied — just update stockQuantity directly
+                product.setStockQuantity(product.getStockQuantity() + item.getQuantity());
+                productRepository.save(product);
+                log.warn("PO item ID {} has no supplierExpiryDate — stock added without batch tracking", item.getId());
+            }
         }
 
         order.setStatus(PurchaseOrderStatus.COMPLETED);
@@ -112,6 +138,9 @@ public class AdminPurchaseOrderServiceImpl implements AdminPurchaseOrderService 
                         .productName(item.getProduct().getName())
                         .quantity(item.getQuantity())
                         .unitPrice(item.getUnitPrice())
+                        .batchNumber(item.getBatchNumber())
+                        .manufacturingDate(item.getManufacturingDate())
+                        .supplierExpiryDate(item.getSupplierExpiryDate())
                         .build())
                 .collect(Collectors.toList());
 
