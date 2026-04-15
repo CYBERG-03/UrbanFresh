@@ -21,6 +21,7 @@ import com.urbanfresh.dto.request.OrderStatusUpdateRequest;
 import com.urbanfresh.dto.request.PlaceOrderRequest;
 import com.urbanfresh.dto.response.AdminOrderResponse;
 import com.urbanfresh.dto.response.AdminOrderReviewResponse;
+import com.urbanfresh.dto.response.BatchAllocationDto;
 import com.urbanfresh.dto.response.DeliveryAssignedOrderResponse;
 import com.urbanfresh.dto.response.DeliveryOrderDetailsResponse;
 import com.urbanfresh.dto.response.OrderItemResponse;
@@ -38,6 +39,7 @@ import com.urbanfresh.model.PaymentStatus;
 import com.urbanfresh.model.Product;
 import com.urbanfresh.model.Role;
 import com.urbanfresh.model.User;
+import com.urbanfresh.repository.OrderItemBatchAllocationRepository;
 import com.urbanfresh.repository.OrderRepository;
 import com.urbanfresh.repository.OrderStatusHistoryRepository;
 import com.urbanfresh.repository.ProductRepository;
@@ -45,6 +47,7 @@ import com.urbanfresh.repository.UserRepository;
 import com.urbanfresh.service.LoyaltyService;
 import com.urbanfresh.service.NotificationService;
 import com.urbanfresh.service.OrderService;
+import com.urbanfresh.service.ProductBatchService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -111,6 +114,8 @@ public class OrderServiceImpl implements OrderService {
     private final UserRepository userRepository;
     private final LoyaltyService loyaltyService;
     private final NotificationService notificationService;
+    private final ProductBatchService productBatchService;
+    private final OrderItemBatchAllocationRepository allocationRepository;
 
     /**
      * Places an order for the authenticated customer.
@@ -228,6 +233,19 @@ public class OrderServiceImpl implements OrderService {
         order.getItems().addAll(orderItems);
 
         Order saved = orderRepository.save(order);
+
+        // Perform FIFO batch allocation for each saved item.
+        // Must happen after save so OrderItem IDs exist for the FK on allocation records.
+        // Only runs for items where a tracked product has allocatable batches; items from
+        // products without batch records are silently skipped (legacy / manual stock products).
+        for (int i = 0; i < saved.getItems().size(); i++) {
+            OrderItem savedItem = saved.getItems().get(i);
+            int qty = request.getItems().get(i).getQuantity();
+            Long productId = savedItem.getProduct() != null ? savedItem.getProduct().getId() : null;
+            if (productId != null && productBatchService.getTotalAvailableQuantity(productId) > 0) {
+                productBatchService.allocateBatchesFifo(savedItem, qty);
+            }
+        }
 
         // Loyalty points are awarded only after payment is confirmed (PENDING → CONFIRMED).
         // See PaymentServiceImpl.applyPaidState() for the award trigger.
@@ -618,6 +636,25 @@ public class OrderServiceImpl implements OrderService {
                         .productDiscountPercentage(item.getProductDiscountPercentage())
                         .quantity(item.getQuantity())
                         .lineTotal(item.getLineTotal())
+                        .batchAllocations(toBatchAllocationDtos(item.getId()))
+                        .build())
+                .toList();
+    }
+
+    /**
+     * Fetches batch allocation records for an order item and maps them to DTOs.
+     * Returns an empty list for legacy order items (placed before batch tracking).
+     *
+     * @param orderItemId ID of the order item to look up allocations for
+     * @return list of batch allocation DTOs; empty if none
+     */
+    private List<BatchAllocationDto> toBatchAllocationDtos(Long orderItemId) {
+        if (orderItemId == null) return List.of();
+        return allocationRepository.findByOrderItemId(orderItemId).stream()
+                .map(alloc -> BatchAllocationDto.builder()
+                        .batchNumber(alloc.getBatch().getBatchNumber())
+                        .expiryDate(alloc.getBatch().getExpiryDate())
+                        .allocatedQuantity(alloc.getAllocatedQuantity())
                         .build())
                 .toList();
     }
