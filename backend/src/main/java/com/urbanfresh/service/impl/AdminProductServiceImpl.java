@@ -133,7 +133,8 @@ public class AdminProductServiceImpl implements AdminProductService {
         product.setImageUrl(request.getImageUrl());
         product.setFeatured(request.isFeatured());
         product.setExpiryDate(request.getExpiryDate());
-        product.setStockQuantity(request.getStockQuantity());
+        // stockQuantity is intentionally NOT set here — it is derived from active batches only.
+        // Adjusting stock must go through batch create/edit, not the product PUT endpoint.
         
         if (request.getDiscountPercentage() != null) {
             product.setDiscountPercentage(request.getDiscountPercentage());
