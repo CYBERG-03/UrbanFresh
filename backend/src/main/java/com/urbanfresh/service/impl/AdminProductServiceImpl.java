@@ -12,6 +12,7 @@ import com.urbanfresh.exception.BrandNotFoundException;
 import com.urbanfresh.exception.ProductNotFoundException;
 import com.urbanfresh.model.Brand;
 import com.urbanfresh.model.Product;
+import com.urbanfresh.model.ProductBatch;
 import com.urbanfresh.repository.BrandRepository;
 import com.urbanfresh.repository.ProductBatchRepository;
 import com.urbanfresh.repository.ProductRepository;
@@ -20,6 +21,8 @@ import com.urbanfresh.service.ProductBatchService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.List;
 
 /**
  * Service Layer – Implements admin CRUD operations for products.
@@ -147,16 +150,15 @@ public class AdminProductServiceImpl implements AdminProductService {
 
         Product saved = productRepository.save(product);
 
-        // If the expiry date changed, update the oldest batch's expiry date to match
+        // If the expiry date changed, update ALL active batches to the new expiry date
         java.time.LocalDate newExpiryDate = saved.getExpiryDate();
         if (newExpiryDate != null && !newExpiryDate.equals(oldExpiryDate)) {
-            productBatchRepository.findByProductIdOrderByExpiryDateAsc(saved.getId())
-                    .stream().findFirst().ifPresent(oldestBatch -> {
-                        oldestBatch.setExpiryDate(newExpiryDate);
-                        productBatchRepository.save(oldestBatch);
-                        log.info("Updated oldest batch ID {} expiry to {} for product ID {}",
-                                oldestBatch.getId(), newExpiryDate, saved.getId());
-                    });
+            List<ProductBatch> batches =
+                    productBatchRepository.findByProductIdOrderByExpiryDateAsc(saved.getId());
+            batches.forEach(batch -> batch.setExpiryDate(newExpiryDate));
+            productBatchRepository.saveAll(batches);
+            log.info("Updated {} batch(es) expiry to {} for product ID {}",
+                    batches.size(), newExpiryDate, saved.getId());
         }
 
         return toAdminResponse(saved);
