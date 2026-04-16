@@ -78,18 +78,35 @@ public class CartServiceImpl implements CartService {
                         Cart.builder().customer(customer).build()));
 
         // If the product is already in the cart, increment quantity rather than add a duplicate line.
+        // Validate that the resulting total does not exceed available stock.
         cart.getItems().stream()
                 .filter(item -> item.getProduct() != null
                         && item.getProduct().getId().equals(product.getId()))
                 .findFirst()
                 .ifPresentOrElse(
-                        existing -> existing.setQuantity(existing.getQuantity() + request.getQuantity()),
-                        () -> cart.getItems().add(
-                                CartItem.builder()
-                                        .cart(cart)
-                                        .product(product)
-                                        .quantity(request.getQuantity())
-                                        .build()));
+                        existing -> {
+                            int newQty = existing.getQuantity() + request.getQuantity();
+                            if (newQty > product.getStockQuantity()) {
+                                throw new InsufficientStockException(
+                                        "Cannot add " + request.getQuantity() + " more of '" + product.getName()
+                                        + "' — only " + (product.getStockQuantity() - existing.getQuantity())
+                                        + " additional unit(s) available");
+                            }
+                            existing.setQuantity(newQty);
+                        },
+                        () -> {
+                            if (request.getQuantity() > product.getStockQuantity()) {
+                                throw new InsufficientStockException(
+                                        "Requested " + request.getQuantity() + " unit(s) of '" + product.getName()
+                                        + "' but only " + product.getStockQuantity() + " available");
+                            }
+                            cart.getItems().add(
+                                    CartItem.builder()
+                                            .cart(cart)
+                                            .product(product)
+                                            .quantity(request.getQuantity())
+                                            .build());
+                        });
 
         cartRepository.save(cart);
         return toCartResponse(cart);
@@ -107,6 +124,13 @@ public class CartServiceImpl implements CartService {
         CartItem item = cartItemRepository
                 .findByIdAndCartCustomerId(cartItemId, customer.getId())
                 .orElseThrow(() -> new CartItemNotFoundException(cartItemId));
+
+        Product product = item.getProduct();
+        if (product != null && request.getQuantity() > product.getStockQuantity()) {
+            throw new InsufficientStockException(
+                    "Requested " + request.getQuantity() + " unit(s) of '" + product.getName()
+                    + "' but only " + product.getStockQuantity() + " available");
+        }
 
         item.setQuantity(request.getQuantity());
         cartItemRepository.save(item);
