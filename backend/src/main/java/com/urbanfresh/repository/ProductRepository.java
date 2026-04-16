@@ -181,4 +181,13 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             @Param("cutoff") LocalDate cutoff,
             @Param("minStock") int minStock
     );
+
+    /**
+     * Counts products whose current stock is at or below their reorder threshold.
+     * Uses a single COUNT query to avoid loading all product rows into memory.
+     *
+     * @return count of low-stock products across the entire catalogue
+     */
+    @Query("SELECT COUNT(p) FROM Product p WHERE p.stockQuantity <= p.reorderThreshold")
+    long countLowStockProducts();
 }

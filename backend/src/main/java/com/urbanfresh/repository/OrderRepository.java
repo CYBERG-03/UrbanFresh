@@ -1,5 +1,6 @@
 package com.urbanfresh.repository;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Repository;
 import com.urbanfresh.dto.response.RecommendationResponse;
 import com.urbanfresh.model.Order;
 import com.urbanfresh.model.OrderStatus;
+import com.urbanfresh.model.PaymentStatus;
 
 /**
  * Repository Layer – Spring Data JPA repository for Order entities.
@@ -128,4 +130,15 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             @Param("statuses") List<OrderStatus> statuses,
             Pageable pageable
     );
+
+    /**
+     * Sums totalAmount across all orders whose payment status is PAID.
+     * Counts every paid order regardless of current fulfilment status so that
+     * revenue does not shrink as orders progress through PROCESSING → DELIVERED.
+     *
+     * @param status the payment status to filter on (pass {@code PaymentStatus.PAID})
+     * @return aggregate total amount; zero when no matching orders exist
+     */
+    @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.paymentStatus = :status")
+    BigDecimal sumTotalAmountByPaymentStatus(@Param("status") PaymentStatus status);
 }

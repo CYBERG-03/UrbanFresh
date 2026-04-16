@@ -11,7 +11,6 @@ import com.urbanfresh.dto.request.InventoryUpdateRequest;
 import com.urbanfresh.dto.response.BatchResponse;
 import com.urbanfresh.dto.response.InventoryResponse;
 import com.urbanfresh.exception.ProductNotFoundException;
-import com.urbanfresh.model.BatchStatus;
 import com.urbanfresh.model.Product;
 import com.urbanfresh.model.ProductBatch;
 import com.urbanfresh.repository.ProductBatchRepository;
@@ -77,9 +76,9 @@ public class InventoryServiceImpl implements InventoryService {
         for (ProductBatch batch : activeBatches) {
             int newQty = Math.min(remaining, batch.getReceivedQuantity());
             batch.setAvailableQuantity(newQty);
-            if (newQty == 0) {
-                batch.setStatus(BatchStatus.EXPIRED);
-            }
+            // Do NOT mark as EXPIRED when qty reaches 0 via a manual inventory update —
+            // the batch may still be within its valid expiry date and could be re-stocked.
+            // BatchExpiryScheduler handles the EXPIRED transition based on the calendar date.
             productBatchRepository.save(batch);
             remaining = Math.max(0, remaining - newQty);
         }

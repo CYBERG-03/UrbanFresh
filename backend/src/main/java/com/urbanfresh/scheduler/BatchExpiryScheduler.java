@@ -129,10 +129,8 @@ public class BatchExpiryScheduler {
 
         if (!nearExpiry.isEmpty()) {
             log.info("[BatchExpiryScheduler] Marking {} batch(es) as NEAR_EXPIRY.", nearExpiry.size());
-            for (ProductBatch batch : nearExpiry) {
-                batch.setStatus(BatchStatus.NEAR_EXPIRY);
-                productBatchRepository.save(batch);
-            }
+            nearExpiry.forEach(batch -> batch.setStatus(BatchStatus.NEAR_EXPIRY));
+            productBatchRepository.saveAll(nearExpiry);
         }
     }
 }

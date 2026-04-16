@@ -8,6 +8,7 @@ import java.time.format.DateTimeFormatter;
 import org.springframework.stereotype.Service;
 
 import com.urbanfresh.dto.AdminDashboardResponse;
+import com.urbanfresh.model.PaymentStatus;
 import com.urbanfresh.model.Role;
 import com.urbanfresh.repository.OrderRepository;
 import com.urbanfresh.repository.ProductRepository;
@@ -62,16 +63,16 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
     }
     
     /**
-     * Calculate total revenue from all confirmed orders
-     * @return sum of totalAmount from CONFIRMED orders
+     * Sums totalAmount across all PAID orders regardless of their current
+     * fulfilment status. Orders progress through CONFIRMED → PROCESSING →
+     * READY → DELIVERED, so filtering only by order status would cause revenue
+     * to shrink as orders are fulfilled.
+     *
+     * @return total revenue from all paid orders as a double
      */
     private double calculateTotalRevenue() {
-        // Fetch all confirmed orders and sum their totals
-        return orderRepository.findAll().stream()
-            .filter(order -> order.getStatus() != null && 
-                           "CONFIRMED".equals(order.getStatus().toString()))
-            .mapToDouble(order -> order.getTotalAmount() != null ? order.getTotalAmount().doubleValue() : 0.0)
-            .sum();
+        BigDecimal total = orderRepository.sumTotalAmountByPaymentStatus(PaymentStatus.PAID);
+        return total != null ? total.doubleValue() : 0.0;
     }
 
     /**
@@ -88,11 +89,9 @@ public class AdminDashboardServiceImpl implements AdminDashboardService {
 
     /**
      * Counts products whose current stock is at or below their reorder threshold.
-     * Uses a JPQL query to avoid loading all products into memory.
+     * Uses a single COUNT query instead of loading all product rows into memory.
      */
     private int countLowStockProducts() {
-        return (int) productRepository.findAll().stream()
-                .filter(p -> p.getStockQuantity() <= p.getReorderThreshold())
-                .count();
+        return (int) productRepository.countLowStockProducts();
     }
 }

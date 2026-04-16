@@ -125,7 +125,9 @@ public class WasteReportServiceImpl implements WasteReportService {
 
     /**
      * Groups wasted products by their monthYear key and builds a sorted summary list.
-     * Each month's wastePercentage is relative to the grand total waste value.
+     * Each month's wastePercentage is this month's share of the ALL-TIME total waste value
+     * (not a percentage of inventory consumed). A value of 60% means 60% of all recorded
+     * waste occurred in that month, not that 60% of that month's inventory was wasted.
      * Months are sorted chronologically (oldest first) for chart display.
      *
      * @param wastedProducts  all wasted product rows

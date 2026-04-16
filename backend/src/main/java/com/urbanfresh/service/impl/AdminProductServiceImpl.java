@@ -1,5 +1,7 @@
 package com.urbanfresh.service.impl;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -21,8 +23,6 @@ import com.urbanfresh.service.ProductBatchService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
-import java.util.List;
 
 /**
  * Service Layer – Implements admin CRUD operations for products.
@@ -150,14 +150,16 @@ public class AdminProductServiceImpl implements AdminProductService {
 
         Product saved = productRepository.save(product);
 
-        // If the expiry date changed, update ALL active batches to the new expiry date
+        // If the expiry date changed, update only ACTIVE/NEAR_EXPIRY batches.
+        // Already-EXPIRED batch records are historical — their expiry date must not be
+        // overwritten as it is the reference point used in WasteRecord entries.
         java.time.LocalDate newExpiryDate = saved.getExpiryDate();
         if (newExpiryDate != null && !newExpiryDate.equals(oldExpiryDate)) {
             List<ProductBatch> batches =
-                    productBatchRepository.findByProductIdOrderByExpiryDateAsc(saved.getId());
+                    productBatchRepository.findActiveBatchesByProductId(saved.getId());
             batches.forEach(batch -> batch.setExpiryDate(newExpiryDate));
             productBatchRepository.saveAll(batches);
-            log.info("Updated {} batch(es) expiry to {} for product ID {}",
+            log.info("Updated {} active batch(es) expiry to {} for product ID {}",
                     batches.size(), newExpiryDate, saved.getId());
         }
 
