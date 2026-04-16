@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
-import { getInventory, updateInventory, getProductBatches, quarantineBatch } from '../../services/inventoryService';
+import { getInventory, updateInventory, getProductBatches } from '../../services/inventoryService';
 import { createPurchaseOrder } from '../../services/adminPurchaseOrderService';
 
 /**
@@ -30,7 +30,6 @@ export default function AdminInventoryPage() {
   const [batchDrawerItem, setBatchDrawerItem]   = useState(null); // inventory row
   const [batches, setBatches]                   = useState([]);
   const [batchesLoading, setBatchesLoading]     = useState(false);
-  const [quarantining, setQuarantining]         = useState(null); // batchId being quarantined
 
   // ── Data fetching ──────────────────────────────────────────────────────────
 
@@ -105,21 +104,6 @@ export default function AdminInventoryPage() {
       toast.error('Failed to load batches.');
     } finally {
       setBatchesLoading(false);
-    }
-  };
-
-  /** Quarantines a single batch and refreshes the drawer list. */
-  const handleQuarantine = async (batchId) => {
-    setQuarantining(batchId);
-    try {
-      const updated = await quarantineBatch(batchDrawerItem.productId, batchId);
-      setBatches((prev) => prev.map((b) => (b.id === batchId ? updated : b)));
-      toast.success(`Batch ${updated.batchNumber} quarantined.`);
-      fetchInventory(); // refresh aggregate stock counts
-    } catch (err) {
-      toast.error(err?.response?.data?.message || 'Failed to quarantine batch.');
-    } finally {
-      setQuarantining(null);
     }
   };
 
@@ -474,8 +458,6 @@ export default function AdminInventoryPage() {
           item={batchDrawerItem}
           batches={batches}
           loading={batchesLoading}
-          quarantining={quarantining}
-          onQuarantine={handleQuarantine}
           onClose={() => setBatchDrawerItem(null)}
         />
       )}
@@ -492,11 +474,10 @@ const BATCH_STATUS_STYLES = {
   RECEIVED:     'bg-blue-50 text-blue-700 border-blue-200',
   ACTIVE:       'bg-green-50 text-green-700 border-green-200',
   NEAR_EXPIRY:  'bg-amber-50 text-amber-700 border-amber-200',
-  QUARANTINED:  'bg-red-50 text-red-700 border-red-200',
   EXPIRED:      'bg-gray-100 text-gray-500 border-gray-200',
 };
 
-function BatchDrawer({ item, batches, loading, quarantining, onQuarantine, onClose }) {
+function BatchDrawer({ item, batches, loading, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true">
       {/* Backdrop */}

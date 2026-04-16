@@ -3,7 +3,7 @@ package com.urbanfresh.model;
 /**
  * Domain Layer – Enumeration of lifecycle states for a product batch.
  * Drives filtering logic: only ACTIVE and NEAR_EXPIRY batches are eligible
- * for FIFO order allocation; QUARANTINED and EXPIRED are excluded.
+ * for FIFO order allocation; EXPIRED batches are excluded.
  */
 public enum BatchStatus {
 
@@ -15,9 +15,6 @@ public enum BatchStatus {
 
     /** Batch is within the near-expiry window (e.g., ≤ 7 days). Auto-managed by scheduler. */
     NEAR_EXPIRY,
-
-    /** Batch is withheld from sale due to quality concerns. Must be manually set by admin. */
-    QUARANTINED,
 
     /** Batch has passed its expiry date or been fully depleted. */
     EXPIRED

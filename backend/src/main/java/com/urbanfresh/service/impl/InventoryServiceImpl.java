@@ -108,45 +108,6 @@ public class InventoryServiceImpl implements InventoryService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Sets a batch status to QUARANTINED so it is excluded from FIFO allocation.
-     * Also decrements the product's legacy stockQuantity by the batch's remaining
-     * available units, keeping the aggregate count consistent.
-     *
-     * @param productId ID of the owning product (cross-checked for integrity)
-     * @param batchId   ID of the batch to quarantine
-     * @return updated BatchResponse with QUARANTINED status
-     */
-    @Override
-    @Transactional
-    public BatchResponse quarantineBatch(Long productId, Long batchId) {
-        ProductBatch batch = productBatchRepository.findById(batchId)
-                .orElseThrow(() -> new IllegalArgumentException("Batch ID " + batchId + " not found."));
-
-        // Verify the batch actually belongs to the specified product
-        if (!batch.getProduct().getId().equals(productId)) {
-            throw new IllegalArgumentException(
-                    "Batch ID " + batchId + " does not belong to product ID " + productId + ".");
-        }
-
-        // Idempotent: already quarantined batches return as-is
-        if (batch.getStatus() == BatchStatus.QUARANTINED) {
-            return toBatchResponse(batch);
-        }
-
-        // Subtract the batch's remaining available units from legacy stockQuantity
-        Product product = batch.getProduct();
-        int toDeduct = batch.getAvailableQuantity();
-        if (toDeduct > 0) {
-            product.setStockQuantity(Math.max(0, product.getStockQuantity() - toDeduct));
-            productRepository.save(product);
-        }
-
-        batch.setStatus(BatchStatus.QUARANTINED);
-        batch.setAvailableQuantity(0);
-        return toBatchResponse(productBatchRepository.save(batch));
-    }
-
     // ── Private helpers ────────────────────────────────────────────────────────
 
     /**
