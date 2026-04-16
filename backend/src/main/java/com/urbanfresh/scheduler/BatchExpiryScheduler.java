@@ -46,16 +46,26 @@ public class BatchExpiryScheduler {
 
     /**
      * Scheduled entry point — runs at midnight every day.
-     * Also invoked once immediately after the application context is fully started
-     * so that batches that expired while the app was offline are handled right away.
      */
     @Scheduled(cron = "0 0 0 * * *")
-    @EventListener(ApplicationReadyEvent.class)
     @Transactional
     public void runDailyExpiryUpdate() {
         LocalDate today = LocalDate.now();
         log.info("[BatchExpiryScheduler] Running expiry update for date={}", today);
+        expireDateExpiredBatches(today);
+        markNearExpiryBatches(today);
+    }
 
+    /**
+     * Startup hook — runs once after the application context is fully ready
+     * so that batches that expired while the app was offline are caught immediately.
+     * Kept separate from the @Scheduled method to prevent double-fire on startup.
+     */
+    @EventListener(ApplicationReadyEvent.class)
+    @Transactional
+    public void runExpiryUpdateOnStartup() {
+        LocalDate today = LocalDate.now();
+        log.info("[BatchExpiryScheduler] Running startup expiry update for date={}", today);
         expireDateExpiredBatches(today);
         markNearExpiryBatches(today);
     }
@@ -119,10 +129,8 @@ public class BatchExpiryScheduler {
 
         if (!nearExpiry.isEmpty()) {
             log.info("[BatchExpiryScheduler] Marking {} batch(es) as NEAR_EXPIRY.", nearExpiry.size());
-            for (ProductBatch batch : nearExpiry) {
-                batch.setStatus(BatchStatus.NEAR_EXPIRY);
-                productBatchRepository.save(batch);
-            }
+            nearExpiry.forEach(batch -> batch.setStatus(BatchStatus.NEAR_EXPIRY));
+            productBatchRepository.saveAll(nearExpiry);
         }
     }
 }

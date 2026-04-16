@@ -86,4 +86,17 @@ public interface ProductBatchRepository extends JpaRepository<ProductBatch, Long
     @Query("SELECT b FROM ProductBatch b WHERE b.expiryDate < :today " +
            "AND b.status IN ('ACTIVE', 'NEAR_EXPIRY')")
     List<ProductBatch> findBatchesForExpiredTransition(@Param("today") LocalDate today);
+
+    /**
+     * Returns all ACTIVE and NEAR_EXPIRY batches for a product, ordered by expiry date.
+     * Used when propagating an expiry-date change — excludes already-EXPIRED batches
+     * to preserve waste history integrity.
+     *
+     * @param productId product ID to query
+     * @return live batches ordered by expiry date ASC
+     */
+    @Query("SELECT b FROM ProductBatch b WHERE b.product.id = :productId " +
+           "AND b.status IN ('ACTIVE', 'NEAR_EXPIRY') " +
+           "ORDER BY b.expiryDate ASC")
+    List<ProductBatch> findActiveBatchesByProductId(@Param("productId") Long productId);
 }

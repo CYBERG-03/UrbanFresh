@@ -99,6 +99,8 @@ public class ExpiryServiceImpl implements ExpiryService {
     /** Maps a Product entity + computed daysUntilExpiry to the lightweight response DTO. */
     private ExpiryProductResponse toExpiryResponse(Product product, LocalDate today) {
         Brand brand = product.getBrand();
+        LocalDate expiry = effectiveExpiry(product);
+        long days = ChronoUnit.DAYS.between(today, expiry);
         return new ExpiryProductResponse(
                 product.getId(),
                 product.getName(),
@@ -107,8 +109,8 @@ public class ExpiryServiceImpl implements ExpiryService {
                 product.getPrice(),
                 product.getUnit(),
                 product.getStockQuantity(),
-                effectiveExpiry(product),
-                daysUntil(today, product),
+                expiry,
+                days,
                 product.getDiscountPercentage()
         );
     }

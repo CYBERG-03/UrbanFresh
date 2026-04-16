@@ -6,7 +6,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -66,7 +65,7 @@ public class InventoryController {
 
     /**
      * Returns all batches for a product ordered by expiry date (oldest first).
-     * Allows admin to inspect batch composition and identify near-expiry or quarantined batches.
+     * Allows admin to inspect batch composition and identify near-expiry batches.
      *
      * @param productId product ID whose batches to list
      * @return 200 OK with list of BatchResponse
@@ -74,21 +73,5 @@ public class InventoryController {
     @GetMapping("/{productId}/batches")
     public ResponseEntity<List<BatchResponse>> getProductBatches(@PathVariable Long productId) {
         return ResponseEntity.ok(inventoryService.getProductBatches(productId));
-    }
-
-    /**
-     * Quarantines a batch, removing it from FIFO allocation without deleting it.
-     * Used when a batch has a quality issue. The batch remains visible in the batch
-     * list with QUARANTINED status for audit purposes.
-     *
-     * @param productId product ID that owns the batch
-     * @param batchId   batch ID to quarantine
-     * @return 200 OK with the updated BatchResponse
-     */
-    @PatchMapping("/{productId}/batches/{batchId}/quarantine")
-    public ResponseEntity<BatchResponse> quarantineBatch(
-            @PathVariable Long productId,
-            @PathVariable Long batchId) {
-        return ResponseEntity.ok(inventoryService.quarantineBatch(productId, batchId));
     }
 }

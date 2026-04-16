@@ -101,6 +101,13 @@ public class LoyaltyServiceImpl implements LoyaltyService {
      * @param orderTotal     the pre-discount order total; guards against over-discounting
      * @return the discount amount in LKR
      */
+    /**
+     * @deprecated Use {@link #validatePointsRedemption} at order placement and
+     * {@link #deductRedeemedPoints} after payment confirmation instead.
+     * This method deducts the customer's loyalty balance immediately — before payment
+     * is confirmed — which can permanently burn points for an order that is never paid.
+     */
+    @Deprecated(forRemoval = true)
     @Override
     @Transactional
     public BigDecimal redeemPoints(User customer, int pointsToRedeem, BigDecimal orderTotal) {

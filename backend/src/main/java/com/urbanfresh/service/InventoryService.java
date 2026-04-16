@@ -33,20 +33,10 @@ public interface InventoryService {
 
     /**
      * Returns all batches for a product ordered by expiry date ascending.
-     * Allows admin to inspect batch composition and identify near-expiry or quarantined batches.
+     * Allows admin to inspect batch composition and identify near-expiry batches.
      *
      * @param productId ID of the product whose batches to retrieve
      * @return list of BatchResponse ordered oldest-expiry-first
      */
     List<BatchResponse> getProductBatches(Long productId);
-
-    /**
-     * Marks a batch as QUARANTINED, removing it from FIFO allocation.
-     * Used by admin to isolate a suspect batch without deleting it (preserves audit trail).
-     *
-     * @param productId ID of the owning product (validated against batch)
-     * @param batchId   ID of the batch to quarantine
-     * @return updated BatchResponse with QUARANTINED status
-     */
-    BatchResponse quarantineBatch(Long productId, Long batchId);
 }

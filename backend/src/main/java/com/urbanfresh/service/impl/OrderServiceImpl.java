@@ -98,7 +98,7 @@ public class OrderServiceImpl implements OrderService {
 		private static final Map<OrderStatus, Set<OrderStatus>> ALLOWED_ADMIN_TRANSITIONS = Map.of(
 				OrderStatus.CONFIRMED,  Set.of(OrderStatus.PROCESSING, OrderStatus.CANCELLED),
 				OrderStatus.PROCESSING, Set.of(OrderStatus.READY, OrderStatus.CANCELLED),
-				OrderStatus.READY, Set.of(OrderStatus.PROCESSING)
+				OrderStatus.READY, Set.of(OrderStatus.PROCESSING, OrderStatus.CANCELLED)
 		);
 
         		private static final Map<OrderStatus, Integer> ORDER_STATUS_PROGRESS_INDEX = Map.of(

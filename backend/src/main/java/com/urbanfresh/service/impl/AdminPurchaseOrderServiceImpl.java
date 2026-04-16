@@ -127,9 +127,13 @@ public class AdminPurchaseOrderServiceImpl implements AdminPurchaseOrderService 
                 }
             }
 
-            // Use batch number from PO item if provided; otherwise auto-generate using incrementing index
+            // Use batch number from PO item (set by override above) if non-blank;
+            // otherwise fall back to an auto-generated incrementing number.
             long existingBatchCount = productBatchRepository.countByProductId(product.getId());
-            String batchNumber = String.format("BATCH-%d-%03d", product.getId(), existingBatchCount + 1);
+            String autoBatchNumber = String.format("BATCH-%d-%03d", product.getId(), existingBatchCount + 1);
+            String batchNumber = (item.getBatchNumber() != null && !item.getBatchNumber().isBlank())
+                    ? item.getBatchNumber()
+                    : autoBatchNumber;
 
             // Expiry date is required to create a batch; skip batch creation if not provided
             if (item.getSupplierExpiryDate() != null) {

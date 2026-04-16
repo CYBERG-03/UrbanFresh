@@ -11,7 +11,6 @@ import com.urbanfresh.dto.request.InventoryUpdateRequest;
 import com.urbanfresh.dto.response.BatchResponse;
 import com.urbanfresh.dto.response.InventoryResponse;
 import com.urbanfresh.exception.ProductNotFoundException;
-import com.urbanfresh.model.BatchStatus;
 import com.urbanfresh.model.Product;
 import com.urbanfresh.model.ProductBatch;
 import com.urbanfresh.repository.ProductBatchRepository;
@@ -77,9 +76,9 @@ public class InventoryServiceImpl implements InventoryService {
         for (ProductBatch batch : activeBatches) {
             int newQty = Math.min(remaining, batch.getReceivedQuantity());
             batch.setAvailableQuantity(newQty);
-            if (newQty == 0) {
-                batch.setStatus(BatchStatus.EXPIRED);
-            }
+            // Do NOT mark as EXPIRED when qty reaches 0 via a manual inventory update —
+            // the batch may still be within its valid expiry date and could be re-stocked.
+            // BatchExpiryScheduler handles the EXPIRED transition based on the calendar date.
             productBatchRepository.save(batch);
             remaining = Math.max(0, remaining - newQty);
         }
@@ -106,45 +105,6 @@ public class InventoryServiceImpl implements InventoryService {
                 .stream()
                 .map(this::toBatchResponse)
                 .collect(Collectors.toList());
-    }
-
-    /**
-     * Sets a batch status to QUARANTINED so it is excluded from FIFO allocation.
-     * Also decrements the product's legacy stockQuantity by the batch's remaining
-     * available units, keeping the aggregate count consistent.
-     *
-     * @param productId ID of the owning product (cross-checked for integrity)
-     * @param batchId   ID of the batch to quarantine
-     * @return updated BatchResponse with QUARANTINED status
-     */
-    @Override
-    @Transactional
-    public BatchResponse quarantineBatch(Long productId, Long batchId) {
-        ProductBatch batch = productBatchRepository.findById(batchId)
-                .orElseThrow(() -> new IllegalArgumentException("Batch ID " + batchId + " not found."));
-
-        // Verify the batch actually belongs to the specified product
-        if (!batch.getProduct().getId().equals(productId)) {
-            throw new IllegalArgumentException(
-                    "Batch ID " + batchId + " does not belong to product ID " + productId + ".");
-        }
-
-        // Idempotent: already quarantined batches return as-is
-        if (batch.getStatus() == BatchStatus.QUARANTINED) {
-            return toBatchResponse(batch);
-        }
-
-        // Subtract the batch's remaining available units from legacy stockQuantity
-        Product product = batch.getProduct();
-        int toDeduct = batch.getAvailableQuantity();
-        if (toDeduct > 0) {
-            product.setStockQuantity(Math.max(0, product.getStockQuantity() - toDeduct));
-            productRepository.save(product);
-        }
-
-        batch.setStatus(BatchStatus.QUARANTINED);
-        batch.setAvailableQuantity(0);
-        return toBatchResponse(productBatchRepository.save(batch));
     }
 
     // ── Private helpers ────────────────────────────────────────────────────────

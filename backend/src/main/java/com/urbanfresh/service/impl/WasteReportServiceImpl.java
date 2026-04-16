@@ -91,12 +91,9 @@ public class WasteReportServiceImpl implements WasteReportService {
                 .limit(TOP_WASTED_LIMIT)
                 .collect(Collectors.toList());
 
-        double overallWastePercentage = computeOverallWastePercentage(totalWasteValue);
-
         return WasteReportResponse.builder()
                 .totalWasteValue(totalWasteValue)
                 .totalWastedUnits(totalWastedUnits)
-                .overallWastePercentage(overallWastePercentage)
                 .monthlySummaries(monthlySummaries)
                 .topWastedProducts(topWasted)
                 .generatedAt(LocalDateTime.now())
@@ -128,7 +125,9 @@ public class WasteReportServiceImpl implements WasteReportService {
 
     /**
      * Groups wasted products by their monthYear key and builds a sorted summary list.
-     * Each month's wastePercentage is relative to the grand total waste value.
+     * Each month's wastePercentage is this month's share of the ALL-TIME total waste value
+     * (not a percentage of inventory consumed). A value of 60% means 60% of all recorded
+     * waste occurred in that month, not that 60% of that month's inventory was wasted.
      * Months are sorted chronologically (oldest first) for chart display.
      *
      * @param wastedProducts  all wasted product rows
@@ -168,19 +167,6 @@ public class WasteReportServiceImpl implements WasteReportService {
                 // Lexicographic sort on "yyyy-MM" is identical to chronological order
                 .sorted(Comparator.comparing(WasteMonthSummaryResponse::getMonthYear))
                 .collect(Collectors.toList());
-    }
-
-    /**
-     * Computes the overall waste percentage:
-     *   (totalWasteValue / totalApprovedInventoryValue) × 100.
-     * Returns 0.0 when inventory value is zero or null (avoids division-by-zero).
-     */
-    private double computeOverallWastePercentage(BigDecimal totalWasteValue) {
-        BigDecimal inventoryValue = productRepository.sumApprovedInventoryValue();
-        if (inventoryValue == null || inventoryValue.compareTo(BigDecimal.ZERO) == 0) {
-            return 0.0;
-        }
-        return computePercentage(totalWasteValue, inventoryValue);
     }
 
     /**

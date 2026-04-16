@@ -124,7 +124,7 @@ public class SupplierServiceImpl implements SupplierService {
                 .featured(false) // Suppliers should not choose featured by default
                 .unit(request.getUnit())
                 .expiryDate(request.getExpiryDate())
-                .stockQuantity(request.getStockQuantity())
+                .stockQuantity(0) // Stock is always 0 on a PENDING product; set by createBatch() after admin approval
                 .reorderThreshold(0)
                 .approvalStatus(ApprovalStatus.PENDING)
                 .build();

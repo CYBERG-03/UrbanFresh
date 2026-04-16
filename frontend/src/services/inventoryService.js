@@ -26,13 +26,3 @@ export const updateInventory = (productId, data) =>
  */
 export const getProductBatches = (productId) =>
   api.get(`/api/admin/inventory/${productId}/batches`).then(res => res.data);
-
-/**
- * Quarantines a batch, removing it from FIFO allocation.
- *
- * @param {number} productId  owning product ID
- * @param {number} batchId    batch to quarantine
- * @returns {Promise<BatchResponse>} updated batch
- */
-export const quarantineBatch = (productId, batchId) =>
-  api.patch(`/api/admin/inventory/${productId}/batches/${batchId}/quarantine`).then(res => res.data);

@@ -183,14 +183,11 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     );
 
     /**
-     * Returns the total monetary value of all approved in-stock products.
-     * Used as the denominator when computing the overall waste percentage so
-     * the ratio reflects the share of active inventory that was lost to expiry.
+     * Counts products whose current stock is at or below their reorder threshold.
+     * Uses a single COUNT query to avoid loading all product rows into memory.
      *
-     * @return sum of (price × stockQuantity) across all approved in-stock products;
-     *         returns null when no matching rows exist — callers must handle null
+     * @return count of low-stock products across the entire catalogue
      */
-    @Query("SELECT SUM(p.price * p.stockQuantity) FROM Product p " +
-           "WHERE p.approvalStatus = 'APPROVED' AND p.stockQuantity > 0")
-    java.math.BigDecimal sumApprovedInventoryValue();
+    @Query("SELECT COUNT(p) FROM Product p WHERE p.stockQuantity <= p.reorderThreshold")
+    long countLowStockProducts();
 }
