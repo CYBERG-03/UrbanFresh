@@ -27,12 +27,6 @@ public class WasteReportResponse {
     /** Total number of wasted units across all expired products. */
     private int totalWastedUnits;
 
-    /**
-     * Overall waste as a percentage of total approved inventory value.
-     * Computed as (totalWasteValue / totalApprovedInventoryValue) × 100.
-     */
-    private double overallWastePercentage;
-
     /** Monthly waste totals sorted in ascending chronological order (oldest first). */
     private List<WasteMonthSummaryResponse> monthlySummaries;
 

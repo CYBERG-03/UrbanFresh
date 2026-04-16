@@ -96,7 +96,6 @@ export default function AdminWasteReportPage() {
   const {
     totalWasteValue,
     totalWastedUnits,
-    overallWastePercentage,
     monthlySummaries,
     topWastedProducts,
     generatedAt,

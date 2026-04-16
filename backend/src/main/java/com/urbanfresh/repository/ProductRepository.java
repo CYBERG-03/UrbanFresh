@@ -181,16 +181,4 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             @Param("cutoff") LocalDate cutoff,
             @Param("minStock") int minStock
     );
-
-    /**
-     * Returns the total monetary value of all approved in-stock products.
-     * Used as the denominator when computing the overall waste percentage so
-     * the ratio reflects the share of active inventory that was lost to expiry.
-     *
-     * @return sum of (price × stockQuantity) across all approved in-stock products;
-     *         returns null when no matching rows exist — callers must handle null
-     */
-    @Query("SELECT SUM(p.price * p.stockQuantity) FROM Product p " +
-           "WHERE p.approvalStatus = 'APPROVED' AND p.stockQuantity > 0")
-    java.math.BigDecimal sumApprovedInventoryValue();
 }

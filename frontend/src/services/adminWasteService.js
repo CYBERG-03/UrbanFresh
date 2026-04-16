@@ -11,7 +11,7 @@ import api from './api';
  * Calls GET /api/admin/waste-report.
  *
  * @returns {Promise<WasteReportResponse>} report with monthlySummaries,
- *   topWastedProducts, totalWasteValue, totalWastedUnits, overallWastePercentage
+ *   topWastedProducts, totalWasteValue, totalWastedUnits
  * @throws Error if unauthorized (401/403) or request fails
  */
 export const getWasteReport = async () => {
