@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import Breadcrumbs from '../../components/customer/Breadcrumbs';
 import { getProducts, getCategories } from '../../services/productService';
 import Navbar from '../../components/Navbar';
 import SearchBar from '../../components/SearchBar';
@@ -121,7 +122,13 @@ export default function ProductListingPage() {
       <Navbar />
 
       <div className="mx-auto w-full max-w-6xl px-4 py-8 md:px-6 md:py-10">
-        <p className="mb-2 text-xs text-[#7a8a83]">Home &gt; Shop All</p>
+        <Breadcrumbs
+          items={[
+            { label: 'Home', to: '/' },
+            { label: 'Products', to: '/products' },
+            { label: 'Shop All' },
+          ]}
+        />
         <h1 className="text-5xl font-medium leading-[1.02] text-[#183127]">The Fresh Market</h1>
         <p className="mt-3 max-w-xl text-sm leading-6 text-[#6b7c74]">
           Hand-picked seasonal fruits and vegetables from local farms. Find what you need quickly and filter by value.

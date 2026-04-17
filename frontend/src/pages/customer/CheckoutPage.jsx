@@ -20,6 +20,9 @@ import {
 import toast from 'react-hot-toast';
 
 import Navbar from '../../components/Navbar';
+import Footer from '../../components/Footer';
+import Breadcrumbs from '../../components/customer/Breadcrumbs';
+import MobileBottomNav from '../../components/customer/MobileBottomNav';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { placeOrder } from '../../services/orderService';
@@ -105,14 +108,22 @@ export default function CheckoutPage() {
   };
 
   return (
-    <div className="min-h-screen bg-green-50 flex flex-col">
+    <div className="min-h-screen bg-[#f5f7f6] flex flex-col">
       <Navbar />
 
-      <div className="max-w-5xl mx-auto px-4 py-10">
+      <div className="flex-1 w-full pb-24 md:pb-8">
+      <div className="mx-auto w-full max-w-7xl px-4 py-8 md:px-8 md:py-10">
+        <Breadcrumbs
+          items={[
+            { label: 'Products', to: '/products' },
+            { label: 'Cart', to: '/cart' },
+            { label: 'Checkout' },
+          ]}
+        />
 
         {/* ── Header ── */}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-green-700">Checkout</h1>
+          <h1 className="text-3xl font-bold text-[#163a2f] md:text-4xl">Checkout</h1>
           <Link to="/cart" className="text-sm text-green-600 hover:underline">
             ← Back to Cart
           </Link>
@@ -165,11 +176,10 @@ export default function CheckoutPage() {
           />
         </div>
       </div>
+      </div>
 
-
-      <footer className="bg-gray-100 border-t border-gray-200 text-gray-500 text-center py-6 text-sm mt-auto">
-        © {new Date().getFullYear()} UrbanFresh. Reducing food waste, one deal at a time.
-      </footer>
+      <MobileBottomNav activeKey="cart" />
+      <Footer />
     </div>
   );
 }
@@ -400,8 +410,6 @@ function OrderSummaryPanel({ cart, orderTotal, orderDiscount, orderSnapshot, poi
 
   // Use orderTotal snapshot (set at order placement) so the total stays correct
   // after clearCart() zeroes cart.totalAmount in the payment step.
-  const rawTotal = orderTotal > 0 ? orderTotal : cart.totalAmount;
-
   // During address step: discount is not yet confirmed — compute from pointsToRedeem.
   // After order is placed: use the server-confirmed orderDiscount.
   const pendingDiscount   = (orderDiscount <= 0 && pointsToRedeem > 0)

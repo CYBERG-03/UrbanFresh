@@ -1,4 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
+import { FiGrid, FiLogOut } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import NotificationBell from './NotificationBell';
@@ -42,7 +43,7 @@ export default function Navbar() {
     <nav className="sticky top-0 z-20 border-b border-[#dde4df] bg-[#f7f9f8]/95 backdrop-blur">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3 md:px-6">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-1 text-[22px] font-bold leading-none tracking-tight text-[#0e3f2e]">
+        <Link to="/" className="flex items-center gap-1 text-[20px] font-bold leading-none tracking-tight text-[#0e3f2e] md:text-[22px]">
           <img src="/logo.svg" alt="UrbanFresh logo" className="h-9 w-9" />
           <span>UrbanFresh</span>
         </Link>
@@ -78,17 +79,21 @@ export default function Navbar() {
             {/* Dashboard shortcut */}
             <Link
               to={dashboardPath}
-              className="rounded-lg border border-[#c8d8cf] bg-white px-4 py-2 text-sm font-medium text-[#0d5138] transition-colors hover:bg-[#eef5f1]"
+              aria-label="My dashboard"
+              className="inline-flex items-center justify-center rounded-lg border border-[#c8d8cf] bg-white px-2.5 py-2 text-sm font-medium text-[#0d5138] transition-colors hover:bg-[#eef5f1] md:px-4"
             >
-              My Dashboard
+              <FiGrid className="md:hidden" size={16} aria-hidden="true" />
+              <span className="hidden md:inline">My Dashboard</span>
             </Link>
 
             {/* Logout */}
             <button
               onClick={handleLogout}
-              className="rounded-lg bg-[#0f5b3f] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#0a4831]"
+              aria-label="Log out"
+              className="inline-flex items-center justify-center rounded-lg bg-[#0f5b3f] px-2.5 py-2 text-sm font-medium text-white transition-colors hover:bg-[#0a4831] md:px-4"
             >
-              Log Out
+              <FiLogOut className="md:hidden" size={16} aria-hidden="true" />
+              <span className="hidden md:inline">Log Out</span>
             </button>
           </div>
         ) : (
