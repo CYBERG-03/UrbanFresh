@@ -44,9 +44,17 @@ export default function ProductListingPage() {
   const prevCommittedRef = useRef(committedSearch);
   useEffect(() => {
     if (committedSearch !== prevCommittedRef.current) {
-      setInputValue(committedSearch);
+      const syncTimer = window.setTimeout(() => {
+        setInputValue(committedSearch);
+      }, 0);
       prevCommittedRef.current = committedSearch;
+
+      return () => {
+        window.clearTimeout(syncTimer);
+      };
     }
+
+    return undefined;
   }, [committedSearch]);
 
   const [result, setResult]         = useState(null);   // ProductPageResponse
@@ -65,12 +73,36 @@ export default function ProductListingPage() {
   // inputValue is intentionally absent from this dependency array.
   // Typing updates inputValue only; the fetch only fires when the URL changes.
   useEffect(() => {
-    setLoading(true);
-    setError(null);
-    getProducts({ search: committedSearch, category, sortBy, page, size: 12 })
-      .then(setResult)
-      .catch(() => setError('Could not load products. Please try again.'))
-      .finally(() => setLoading(false));
+    let cancelled = false;
+
+    Promise.resolve()
+      .then(() => {
+        if (cancelled) return null;
+
+        setLoading(true);
+        setError(null);
+
+        return getProducts({ search: committedSearch, category, sortBy, page, size: 12 });
+      })
+      .then((data) => {
+        if (!cancelled && data) {
+          setResult(data);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setError('Could not load products. Please try again.');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [committedSearch, category, sortBy, page]);
 
   // ── URL mutation helpers ────────────────────────────────────────────────────

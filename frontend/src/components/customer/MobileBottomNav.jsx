@@ -1,11 +1,12 @@
+import { createElement } from 'react';
 import { Link } from 'react-router-dom';
 import { FiClipboard, FiShoppingBag, FiShoppingCart, FiUser } from 'react-icons/fi';
 
 const ITEMS = [
-  { key: 'shop', label: 'Shop', to: '/products', Icon: FiShoppingBag },
-  { key: 'cart', label: 'Cart', to: '/cart', Icon: FiShoppingCart },
-  { key: 'orders', label: 'Orders', to: '/orders', Icon: FiClipboard },
-  { key: 'profile', label: 'Profile', to: '/profile', Icon: FiUser },
+  { key: 'shop', label: 'Shop', to: '/products', icon: FiShoppingBag },
+  { key: 'cart', label: 'Cart', to: '/cart', icon: FiShoppingCart },
+  { key: 'orders', label: 'Orders', to: '/orders', icon: FiClipboard },
+  { key: 'profile', label: 'Profile', to: '/profile', icon: FiUser },
 ];
 
 /**
@@ -18,7 +19,7 @@ export default function MobileBottomNav({ activeKey = 'shop' }) {
       className="fixed inset-x-0 bottom-0 z-30 border-t border-[#d9e4df] bg-white/95 backdrop-blur md:hidden"
     >
       <div className="mx-auto grid max-w-7xl grid-cols-4 px-2 py-2">
-        {ITEMS.map(({ key, label, to, Icon }) => {
+        {ITEMS.map(({ key, label, to, icon: ItemIcon }) => {
           const active = key === activeKey;
 
           return (
@@ -32,7 +33,7 @@ export default function MobileBottomNav({ activeKey = 'shop' }) {
               }`}
               aria-current={active ? 'page' : undefined}
             >
-              <Icon size={16} aria-hidden="true" />
+              {createElement(ItemIcon, { size: 16, 'aria-hidden': 'true' })}
               <span className="mt-0.5">{label}</span>
             </Link>
           );

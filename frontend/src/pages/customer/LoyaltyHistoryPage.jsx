@@ -45,7 +45,7 @@ export default function LoyaltyHistoryPage() {
     return rows
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .slice(0, 8);
-  }, [loyalty, orders]);
+  }, [orders]);
 
   const rightAside = (
     <>

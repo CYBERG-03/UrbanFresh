@@ -26,14 +26,24 @@ export default function ProductDetailPage() {
   const [errorType, setErrorType] = useState(null);
 
   useEffect(() => {
+    let cancelled = false;
+
     // Reset state whenever the product ID in the URL changes
-    setLoading(true);
-    setErrorType(null);
-    setProduct(null);
+    const resetTimer = window.setTimeout(() => {
+      if (cancelled) return;
+      setLoading(true);
+      setErrorType(null);
+      setProduct(null);
+    }, 0);
 
     getProductById(id)
-      .then(setProduct)
+      .then((data) => {
+        if (!cancelled) {
+          setProduct(data);
+        }
+      })
       .catch((err) => {
+        if (cancelled) return;
         // Distinguish a missing product (404) from a network/server failure
         if (err?.response?.status === 404) {
           setErrorType('not_found');
@@ -41,7 +51,16 @@ export default function ProductDetailPage() {
           setErrorType('error');
         }
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(resetTimer);
+    };
   }, [id]);
 
   return (
