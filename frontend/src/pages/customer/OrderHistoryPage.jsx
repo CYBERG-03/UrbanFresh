@@ -21,7 +21,7 @@ export default function OrderHistoryPage() {
 
   useEffect(() => {
     getMyOrders()
-      .then((response) => setOrders(Array.isArray(response.data) ? response.data : []))
+      .then((data) => setOrders(Array.isArray(data) ? data : []))
       .catch(() => toast.error('Failed to load order history.'))
       .finally(() => setLoading(false));
   }, []);

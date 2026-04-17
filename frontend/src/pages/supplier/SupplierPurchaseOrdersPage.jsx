@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { FiCheck, FiDownload, FiFilter, FiSend, FiX } from 'react-icons/fi';
+import { FiCheck, FiDownload, FiSend, FiX } from 'react-icons/fi';
 import useSupplierPurchaseOrders from '../../hooks/useSupplierPurchaseOrders';
 import UpdatePurchaseOrderStatusModal from '../../components/supplier/UpdatePurchaseOrderStatusModal';
 import toast from 'react-hot-toast';
@@ -22,7 +22,6 @@ export default function SupplierPurchaseOrdersPage() {
   const [noticeOrderId, setNoticeOrderId] = useState(null);
   const [noticeText, setNoticeText] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
-  const [showFilterPanel, setShowFilterPanel] = useState(false);
 
   useEffect(() => {
     fetchOrders();
@@ -89,10 +88,10 @@ export default function SupplierPurchaseOrdersPage() {
     return orders.filter((order) => order.status === statusFilter);
   }, [orders, statusFilter]);
 
-  const activeOrders = filteredOrders.filter((order) => order.status !== 'COMPLETED').length;
-  const pendingActions = filteredOrders.filter((order) => order.status === 'PENDING').length;
-  const fulfillmentRate = filteredOrders.length
-    ? `${Math.round((filteredOrders.filter((order) => order.status === 'COMPLETED').length / filteredOrders.length) * 100)}%`
+  const activeOrders = orders.filter((order) => !['COMPLETED', 'CANCELLED'].includes(order.status)).length;
+  const pendingActions = orders.filter((order) => order.status === 'PENDING').length;
+  const fulfillmentRate = orders.length
+    ? `${Math.round((orders.filter((order) => order.status === 'COMPLETED').length / orders.length) * 100)}%`
     : '0%';
 
   const handleExportCsv = () => {
@@ -139,24 +138,14 @@ export default function SupplierPurchaseOrdersPage() {
         { label: 'Purchase Orders' },
       ]}
       pageAction={
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setShowFilterPanel((prev) => !prev)}
-            className="inline-flex h-9 items-center gap-2 rounded-lg border border-[#dbe4e0] bg-white px-3 text-xs font-semibold text-[#35544a] transition hover:bg-[#f4f8f6] md:text-sm"
-          >
-            <FiFilter className="h-4 w-4" />
-            <span>Filter</span>
-          </button>
-          <button
-            type="button"
-            onClick={handleExportCsv}
-            className="inline-flex h-9 items-center gap-2 rounded-lg bg-[#0d4a38] px-3 text-xs font-semibold text-white transition hover:bg-[#083a2c] md:text-sm"
-          >
-            <FiDownload className="h-4 w-4" />
-            <span>Export CSV</span>
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={handleExportCsv}
+          className="inline-flex h-9 items-center gap-2 rounded-lg bg-[#0d4a38] px-3 text-xs font-semibold text-white transition hover:bg-[#083a2c] md:text-sm"
+        >
+          <FiDownload className="h-4 w-4" />
+          <span>Export CSV</span>
+        </button>
       }
     >
       {loading ? (
@@ -173,26 +162,24 @@ export default function SupplierPurchaseOrdersPage() {
 
       {!loading && !error ? (
         <>
-          {showFilterPanel ? (
-            <section className="rounded-2xl border border-[#e4ebe8] bg-white p-4">
-              <div className="flex flex-wrap items-center gap-2">
-                {['ALL', 'PENDING', 'ACCEPTED', 'SHIPPED', 'DELIVERED', 'COMPLETED', 'CANCELLED'].map((status) => (
-                  <button
-                    key={status}
-                    type="button"
-                    onClick={() => setStatusFilter(status)}
-                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                      statusFilter === status
-                        ? 'bg-[#0d4a38] text-white'
-                        : 'bg-[#f3f5f4] text-[#5d726b] hover:bg-[#e8efec]'
-                    }`}
-                  >
-                    {status}
-                  </button>
-                ))}
-              </div>
-            </section>
-          ) : null}
+          <section className="rounded-2xl border border-[#e4ebe8] bg-white p-4">
+            <div className="flex flex-wrap items-center gap-2">
+              {['ALL', 'PENDING', 'ACCEPTED', 'SHIPPED', 'DELIVERED', 'COMPLETED', 'CANCELLED'].map((status) => (
+                <button
+                  key={status}
+                  type="button"
+                  onClick={() => setStatusFilter(status)}
+                  className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                    statusFilter === status
+                      ? 'bg-[#0d4a38] text-white'
+                      : 'bg-[#f3f5f4] text-[#5d726b] hover:bg-[#e8efec]'
+                  }`}
+                >
+                  {status}
+                </button>
+              ))}
+            </div>
+          </section>
 
           <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <MetricCard label="Active POs" value={String(activeOrders)} helper="Awaiting updates" />

@@ -121,7 +121,7 @@ export default function AdminWasteReportPage() {
                         fontSize: '13px',
                       }}
                     />
-                    <Bar dataKey="wasteValue" fill="#ba3a3a" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="wasteValue" fill="#ba3a3a" radius={[4, 4, 0, 0]} maxBarSize={60} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

@@ -30,19 +30,19 @@ export default function CustomerDashboard() {
     Promise.allSettled([getMyOrders(), getLoyaltyPoints(), getRecommendations()])
       .then(([ordersResult, loyaltyResult, recsResult]) => {
         if (ordersResult.status === 'fulfilled') {
-          setOrders(ordersResult.value.data);
+          setOrders(ordersResult.value);
         } else {
           toast.error('Failed to load your orders. Please refresh.');
         }
 
         if (loyaltyResult.status === 'fulfilled') {
-          setLoyalty(loyaltyResult.value.data);
+          setLoyalty(loyaltyResult.value);
         } else {
           toast.error('Failed to load loyalty points. Please refresh.');
         }
 
         if (recsResult.status === 'fulfilled') {
-          setRecommendations(recsResult.value.data);
+          setRecommendations(recsResult.value);
         }
       })
       .finally(() => setLoading(false));
@@ -80,7 +80,7 @@ export default function CustomerDashboard() {
 
       {loyalty && (
         <div className="rounded-2xl bg-[#0d4a38] p-4 text-white shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-[#b4d2c5]">Impact points</p>
+          <p className="text-xs uppercase tracking-wide text-[#b4d2c5]">Loyalty Points</p>
           <p className="mt-1 text-3xl font-semibold">{loyalty.totalPoints}</p>
           <p className="mt-1 text-xs text-[#d6e8df]">Use points at checkout for instant discounts.</p>
           <Link

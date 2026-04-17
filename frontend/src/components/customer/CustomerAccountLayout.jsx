@@ -27,7 +27,7 @@ export default function CustomerAccountLayout({
           {subtitle && <p className="mt-2 max-w-2xl text-sm text-[#6f817b]">{subtitle}</p>}
         </header>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[220px_minmax(0,1fr)_260px]">
+        <div className={`grid grid-cols-1 gap-6 lg:grid-cols-[220px_minmax(0,1fr)] ${rightAside ? 'xl:grid-cols-[220px_minmax(0,1fr)_260px]' : ''}`}>
           <CustomerAccountSidebar activeKey={activeSection} userName={userName} />
 
           <section className="space-y-6">{children}</section>

@@ -15,13 +15,13 @@ export default function LoyaltyHistoryPage() {
     Promise.allSettled([getLoyaltyPoints(), getMyOrders()])
       .then(([loyaltyResult, ordersResult]) => {
         if (loyaltyResult.status === 'fulfilled') {
-          setLoyalty(loyaltyResult.value.data);
+          setLoyalty(loyaltyResult.value);
         } else {
           toast.error('Failed to load loyalty summary.');
         }
 
         if (ordersResult.status === 'fulfilled') {
-          setOrders(Array.isArray(ordersResult.value.data) ? ordersResult.value.data : []);
+          setOrders(Array.isArray(ordersResult.value) ? ordersResult.value : []);
         }
       })
       .finally(() => setLoading(false));
@@ -56,10 +56,10 @@ export default function LoyaltyHistoryPage() {
       </div>
 
       <div className="rounded-2xl bg-[#0d4a38] p-4 text-white shadow-sm">
-        <p className="text-sm font-semibold">Free Greenhouse Delivery</p>
-        <p className="mt-1 text-xs text-[#d5e7de]">Keep building loyalty points to unlock seasonal delivery rewards.</p>
-        <Link to="/products" className="mt-3 inline-flex rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-[#0d4a38]">
-          View offers
+        <p className="text-sm font-semibold">Redeem Points</p>
+        <p className="mt-1 text-xs text-[#d5e7de]">Apply loyalty points at checkout to get instant discounts on your order.</p>
+        <Link to="/cart" className="mt-3 inline-flex rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-[#0d4a38]">
+          Go to Cart
         </Link>
       </div>
     </>

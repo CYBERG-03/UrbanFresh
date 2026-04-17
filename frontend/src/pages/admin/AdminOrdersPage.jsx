@@ -299,15 +299,7 @@ export default function AdminOrdersPage() {
             Filters
           </button>
 
-          <button
-            type="button"
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#0d4a38] px-4 text-sm font-semibold text-white transition hover:bg-[#083a2c]"
-          >
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14m7-7H5" />
-            </svg>
-            Export CSV
-          </button>
+
         </div>
 
         {error && (

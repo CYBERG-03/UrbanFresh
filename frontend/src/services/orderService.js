@@ -23,7 +23,7 @@ export const placeOrder = (deliveryAddress, items, pointsToRedeem = 0) =>
  *
  * @returns {Promise<OrderResponse[]>} list of orders; empty array when no orders exist
  */
-export const getMyOrders = () => api.get('/api/customer/orders');
+export const getMyOrders = () => api.get('/api/customer/orders').then((res) => res.data);
 
 /**
  * Fetch up to 5 "Buy Again" product recommendations for the authenticated customer.
@@ -32,7 +32,7 @@ export const getMyOrders = () => api.get('/api/customer/orders');
  *
  * @returns {Promise<RecommendationResponse[]>} ordered recommendation list (empty when no history)
  */
-export const getRecommendations = () => api.get('/api/customer/recommendations');
+export const getRecommendations = () => api.get('/api/customer/recommendations').then((res) => res.data);
 
 /**
  * Fetch one authenticated customer's order by ID.
@@ -107,7 +107,7 @@ export const resolveOrderForSuccess = async ({ orderId } = {}) => {
  *
  * @returns {Promise<LoyaltyPointsResponse>} totalPoints, earnedPoints, redeemedPoints, conversionRule
  */
-export const getLoyaltyPoints = () => api.get('/api/customer/loyalty');
+export const getLoyaltyPoints = () => api.get('/api/customer/loyalty').then((res) => res.data);
 
 /**
  * Fetches a paginated list of all customer orders for admin operations.
