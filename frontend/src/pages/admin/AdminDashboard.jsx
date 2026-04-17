@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { toast } from 'react-hot-toast';
+import { Link } from 'react-router-dom';
 import adminDashboardService from '../../services/adminDashboardService';
 import { useAuth } from '../../context/AuthContext';
 import AdminDeliveryLayout from '../../components/admin/delivery/AdminDeliveryLayout';
@@ -11,8 +10,7 @@ import AdminDeliveryLayout from '../../components/admin/delivery/AdminDeliveryLa
  * Displays admin KPI metrics, alerts, and operational overview
  */
 const AdminDashboard = () => {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -33,12 +31,6 @@ const AdminDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleLogout = () => {
-    logout();
-    toast.success('Logged out successfully');
-    navigate('/login', { replace: true });
   };
 
   const summaryCards = [
@@ -71,29 +63,11 @@ const AdminDashboard = () => {
     },
   ];
 
-  const actions = (
-    <>
-      <Link
-        to="/admin/profile"
-        className="inline-flex items-center rounded-lg border border-[#d4dfdb] bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-      >
-        My Profile
-      </Link>
-      <button
-        onClick={handleLogout}
-        className="inline-flex items-center rounded-lg bg-[#0d4a38] px-3 py-2 text-sm font-medium text-white transition hover:bg-[#083a2c]"
-      >
-        Logout
-      </button>
-    </>
-  );
-
   return (
     <AdminDeliveryLayout
       title="UrbanFresh Admin"
       description={`Welcome, ${user?.name || 'Admin'} (Admin)`}
       breadcrumbCurrent="Overview"
-      actions={actions}
     >
       {dashboardData?.summary?.lastUpdated && (
         <div className="rounded-2xl border border-[#e4ebe8] bg-white px-4 py-3 text-sm text-slate-500 sm:px-6">
@@ -136,20 +110,7 @@ const AdminDashboard = () => {
             ))}
           </section>
 
-          <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-            <div className="rounded-2xl border border-[#e4ebe8] bg-white p-5 shadow-sm xl:col-span-2">
-              <h2 className="text-lg font-semibold text-slate-900">Market Management</h2>
-              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <ActionLink to="/admin/products" title="Manage Products" description="Add, edit, hide, and approve products." />
-                <ActionLink to="/admin/inventory" title="Manage Inventory" description="Track stock, thresholds, and purchase orders." />
-                <ActionLink to="/admin/orders" title="Manage Orders" description="Review order states and delivery readiness." />
-                <ActionLink to="/admin/suppliers" title="Manage Suppliers" description="Create suppliers and assign brands." />
-                <ActionLink to="/admin/brands" title="Manage Brands" description="Maintain active brand catalog data." />
-                <ActionLink to="/admin/purchase-orders" title="Purchase Orders" description="Monitor purchasing workflow and status." />
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-[#e4ebe8] bg-white p-5 shadow-sm">
+          <section className="rounded-2xl border border-[#e4ebe8] bg-white p-5 shadow-sm">
               <h2 className="text-lg font-semibold text-slate-900">Operational Alerts</h2>
               <div className="mt-4 space-y-3">
                 <AlertItem
@@ -177,25 +138,12 @@ const AdminDashboard = () => {
                   tone="slate"
                 />
               </div>
-            </div>
           </section>
         </>
       )}
     </AdminDeliveryLayout>
   );
 };
-
-function ActionLink({ to, title, description }) {
-  return (
-    <Link
-      to={to}
-      className="group rounded-xl border border-[#e4ebe8] bg-[#f8fbf9] p-4 transition hover:border-[#c5d6cf] hover:bg-[#edf5f1]"
-    >
-      <p className="text-sm font-semibold text-slate-900 transition group-hover:text-[#0d4a38]">{title}</p>
-      <p className="mt-1 text-xs text-slate-500">{description}</p>
-    </Link>
-  );
-}
 
 function AlertItem({ label, value, hint, tone, linked = false }) {
   const toneClass =
