@@ -52,7 +52,11 @@ function App() {
       <BrowserRouter>
         <Suspense fallback={<div className="app-loading">Loading...</div>}>
         {/* Global toast notifications */}
-        <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
+        <Toaster
+          position="top-right"
+          toastOptions={{ duration: 4000 }}
+          containerStyle={{ top: 68 }}
+        />
         <Routes>
           {/* ── Public routes ── */}
           <Route path="/" element={<LandingPage />} />

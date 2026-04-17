@@ -82,15 +82,15 @@ export default function ProductDetailPage() {
 
         {/* ── Scenario 2: invalid / not-found product ── */}
           {!loading && errorType === 'not_found' && (
-            <div className="bg-white rounded-2xl border border-[#e4ebe8] shadow-sm p-10 text-center">
+            <div className="bg-white rounded-2xl border border-[#e4ebe8] shadow-sm p-12 text-center">
             <p className="text-5xl mb-4">🔍</p>
-            <h2 className="text-xl font-semibold text-gray-800 mb-2">Product Not Found</h2>
-            <p className="text-gray-500 text-sm mb-6">
+            <h2 className="text-xl font-semibold text-[#163a2f] mb-2">Product Not Found</h2>
+            <p className="text-[#7e8d87] text-sm mb-6">
               The product you are looking for does not exist or has been removed.
             </p>
             <Link
               to="/products"
-              className="px-5 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
+              className="px-5 py-2.5 bg-[#0d4a38] text-white text-sm font-semibold rounded-xl hover:bg-[#083a2c] transition-colors"
             >
               Browse All Products
             </Link>
@@ -150,92 +150,91 @@ function ProductDetail({ product }) {
         <img
           src={product.imageUrl}
           alt={product.name}
-          className="w-full md:w-80 h-64 md:h-auto object-cover shrink-0"
+          className="w-full md:w-96 h-72 md:h-auto object-cover shrink-0"
         />
       ) : (
-        <div className="w-full md:w-80 h-64 md:h-auto bg-green-100 flex items-center justify-center text-green-400 text-7xl shrink-0">
+        <div className="w-full md:w-96 h-72 md:h-auto bg-[#eaf3ee] flex items-center justify-center text-[#0d4a38] text-7xl shrink-0">
           🥦
         </div>
       )}
 
       {/* ── Details panel ── */}
-      <div className="p-6 flex flex-col flex-1 gap-4">
+      <div className="p-8 flex flex-col flex-1 gap-4">
         {product.category && (
-          <span className="text-xs text-green-600 font-semibold uppercase tracking-wide">
+          <span className="inline-block text-xs font-bold uppercase tracking-widest text-white bg-[#0d4a38] px-3 py-1 rounded-full w-fit">
             {product.category}
           </span>
         )}
 
-        <h1 className="text-2xl font-bold text-gray-800">{product.name}</h1>
+        <h1 className="text-3xl font-bold text-[#163a2f]">{product.name}</h1>
 
         {product.discountPercentage ? (
           <div className="space-y-1">
-            <div className="text-lg text-red-600 line-through">
+            <div className="text-base text-[#7e8d87] line-through">
               {formatPrice(product.price, product.unit)}
             </div>
-            <p className="text-3xl font-bold text-green-700">
+            <p className="text-4xl font-bold text-[#0d4a38]">
               {formatPrice(calculateDiscountedPrice(product.price, product.discountPercentage), product.unit)}
             </p>
-            <div className="inline-block bg-green-100 text-green-700 font-bold px-3 py-1 rounded-lg text-sm">
+            <div className="inline-block bg-[#eaf3ee] text-[#0d4a38] font-bold px-3 py-1 rounded-lg text-sm">
               {product.discountPercentage}% OFF
             </div>
           </div>
         ) : (
-          <p className="text-3xl font-bold text-green-700">
+          <p className="text-4xl font-bold text-[#0d4a38]">
             {formatPrice(product.price, product.unit)}
           </p>
         )}
 
         {/* Near-expiry notice — surfaces discount opportunity and urgency */}
         {isNearExpiry && (
-          <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-4 py-3 text-sm">
-            🕐 <span className="font-semibold">Near-Expiry Offer</span> — expires on{' '}
-            <span className="font-medium">{displayExpiry}</span>
-            {daysUntilExpiry === 0
-              ? ' (today!)'
-              : daysUntilExpiry === 1
-              ? ' (tomorrow)'
-              : ` (${daysUntilExpiry} days left)`}
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl px-4 py-3 text-sm flex items-start gap-2">
+            <span className="shrink-0 mt-0.5">⏰</span>
+            <span>
+              <span className="font-semibold">Freshness Alert</span>: This batch expires in{' '}
+              {daysUntilExpiry === 0 ? 'today' : daysUntilExpiry === 1 ? '1 day' : `${daysUntilExpiry} days`}.
+              {product.discountPercentage ? ' Enjoy ' + product.discountPercentage + '% off at checkout.' : ''}
+            </span>
           </div>
         )}
 
         {product.description && (
-          <p className="text-gray-600 text-sm leading-relaxed">{product.description}</p>
+          <p className="text-[#4a5c55] text-sm leading-relaxed">{product.description}</p>
         )}
 
         {/* Show expiry date even outside the near-expiry window for transparency */}
         {displayExpiry && !isNearExpiry && (
-          <p className="text-xs text-gray-400">Best before: {displayExpiry}</p>
+          <p className="text-xs text-[#7e8d87]">Best before: {displayExpiry}</p>
         )}
 
         {/* Stock status + Quantity selector + Add to Cart */}
-        <div className="mt-auto pt-4 border-t border-gray-100">
+        <div className="mt-auto pt-5 border-t border-[#e4ebe8]">
           {product.inStock ? (
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-4">
               <div className="flex items-center gap-2">
-                <span className="text-xs text-green-600 font-medium">✓ In Stock</span>
-                <span className="text-xs text-gray-400">({product.stockQuantity} available)</span>
+                <span className="inline-block w-2 h-2 rounded-full bg-[#0d4a38]"></span>
+                <span className="text-sm font-medium text-[#0d4a38]">In Stock</span>
               </div>
 
               {/* Quantity stepper */}
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-gray-700">Quantity</span>
-                <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+              <div className="flex items-center gap-4">
+                <span className="text-sm font-semibold text-[#163a2f] uppercase tracking-wide">Quantity</span>
+                <div className="flex items-center border border-[#e4ebe8] rounded-xl overflow-hidden">
                   <button
                     aria-label="Decrease quantity"
                     onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                    className="w-9 h-9 flex items-center justify-center text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors text-lg font-bold"
+                    className="w-10 h-10 flex items-center justify-center text-[#0d4a38] hover:bg-[#eaf3ee] active:bg-[#d3e8dc] transition-colors text-xl font-bold"
                   >
                     −
                   </button>
-                  <span className="w-10 text-center text-sm font-semibold text-gray-800 select-none">
+                  <span className="w-12 text-center text-sm font-bold text-[#163a2f] select-none">
                     {quantity}
                   </span>
                   <button
                     aria-label="Increase quantity"
                     onClick={() => setQuantity((q) => Math.min(product.stockQuantity, q + 1))}
                     disabled={quantity >= product.stockQuantity}
-                    className="w-9 h-9 flex items-center justify-center text-gray-600 hover:bg-gray-100 active:bg-gray-200 transition-colors text-lg font-bold disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="w-10 h-10 flex items-center justify-center text-[#0d4a38] hover:bg-[#eaf3ee] active:bg-[#d3e8dc] transition-colors text-xl font-bold disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                     +
                   </button>
@@ -260,13 +259,14 @@ function ProductDetail({ product }) {
                     setAdding(false);
                   }
                 }}
-                className="w-full sm:w-auto px-8 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full py-3 bg-[#0d4a38] hover:bg-[#083a2c] text-white text-sm font-semibold rounded-xl active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path strokeLinecap="round" strokeLinejoin="round" d="M6 2 3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0" /></svg>
                 {adding ? 'Adding…' : 'Add to Cart'}
               </button>
             </div>
           ) : (
-            <span className="text-sm text-red-500 font-medium">Out of Stock</span>
+            <span className="inline-block px-4 py-2 rounded-xl bg-red-50 border border-red-200 text-sm font-semibold text-red-600">Out of Stock</span>
           )}
         </div>
       </div>
@@ -277,19 +277,19 @@ function ProductDetail({ product }) {
 /** Animated skeleton shown while the product fetch is in flight. */
 function ProductDetailSkeleton() {
   return (
-    <div className="bg-white rounded-xl shadow-sm overflow-hidden flex flex-col md:flex-row animate-pulse">
-      <div className="w-full md:w-80 h-64 bg-gray-200 shrink-0" />
-      <div className="p-6 flex flex-col flex-1 gap-4">
-        <div className="h-3 bg-gray-200 rounded w-1/4" />
-        <div className="h-6 bg-gray-200 rounded w-2/3" />
-        <div className="h-8 bg-gray-200 rounded w-1/4" />
+    <div className="bg-white rounded-2xl border border-[#e4ebe8] shadow-sm overflow-hidden flex flex-col md:flex-row animate-pulse">
+      <div className="w-full md:w-96 h-72 bg-[#e4ebe8] shrink-0" />
+      <div className="p-8 flex flex-col flex-1 gap-4">
+        <div className="h-4 bg-[#e4ebe8] rounded-full w-20" />
+        <div className="h-7 bg-[#e4ebe8] rounded-lg w-2/3" />
+        <div className="h-9 bg-[#e4ebe8] rounded-lg w-1/4" />
         <div className="space-y-2">
-          <div className="h-3 bg-gray-200 rounded w-full" />
-          <div className="h-3 bg-gray-200 rounded w-5/6" />
-          <div className="h-3 bg-gray-200 rounded w-4/6" />
+          <div className="h-3 bg-[#e4ebe8] rounded w-full" />
+          <div className="h-3 bg-[#e4ebe8] rounded w-5/6" />
+          <div className="h-3 bg-[#e4ebe8] rounded w-4/6" />
         </div>
-        <div className="mt-auto pt-4 border-t border-gray-100">
-          <div className="h-9 bg-gray-200 rounded w-32" />
+        <div className="mt-auto pt-5 border-t border-[#e4ebe8]">
+          <div className="h-11 bg-[#e4ebe8] rounded-xl w-full" />
         </div>
       </div>
     </div>

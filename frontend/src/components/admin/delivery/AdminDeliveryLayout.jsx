@@ -26,7 +26,7 @@ export default function AdminDeliveryLayout({
     { to: '/admin/delivery-personnel', label: 'Delivery Personnel' },
     { to: '/admin/suppliers', label: 'Manage Suppliers' },
     { to: '/admin/brands', label: 'Manage Brands' },
-    { to: '/admin/expiry', label: 'Expiry Report' },
+    { to: '/admin/expiry', label: 'Expiry Management' },
     { to: '/admin/waste-report', label: 'Waste Report' },
   ];
 
@@ -63,22 +63,22 @@ export default function AdminDeliveryLayout({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            <Link to="/admin" className="text-xl font-semibold tracking-tight text-[#0d4a38]">
-              UrbanFresh
+            <Link to="/admin" className="flex items-center gap-1 text-[20px] font-bold leading-none tracking-tight text-[#0e3f2e] md:text-[22px]">
+              <img src="/logo.svg" alt="UrbanFresh logo" className="h-9 w-9" />
+              <span>UrbanFresh</span>
             </Link>
           </div>
 
           <div className="flex items-center gap-2.5">
             <Link
               to="/admin/profile"
-              className="inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-[#d5dfdb] bg-white text-slate-500 transition hover:text-[#0d4a38]"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#d5dfdb] bg-white text-slate-500 transition hover:text-[#0d4a38]"
               aria-label="Profile"
             >
-              <img
-                src="https://images.unsplash.com/photo-1541534401786-2077eed87a72?auto=format&fit=crop&w=96&q=80"
-                alt="Admin profile"
-                className="h-full w-full object-cover"
-              />
+              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                <circle cx="12" cy="8" r="4" strokeLinecap="round" strokeLinejoin="round" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+              </svg>
             </Link>
             <button
               type="button"
@@ -103,7 +103,6 @@ export default function AdminDeliveryLayout({
             </span>
             <div>
               <p className="text-2xl font-semibold leading-none text-[#0d4a38]">Admin Portal</p>
-              <p className="text-xs font-medium text-[#6f817b]">Market Manager</p>
             </div>
           </div>
 

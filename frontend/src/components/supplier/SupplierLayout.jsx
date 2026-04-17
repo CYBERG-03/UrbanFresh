@@ -53,8 +53,9 @@ export default function SupplierLayout({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            <Link to="/supplier" className="text-xl font-semibold tracking-tight text-[#0d4a38]">
-              UrbanFresh
+            <Link to="/supplier" className="flex items-center gap-1 text-[20px] font-bold leading-none tracking-tight text-[#0e3f2e]">
+              <img src="/logo.svg" alt="UrbanFresh logo" className="h-9 w-9" />
+              <span>UrbanFresh</span>
             </Link>
           </div>
 
@@ -86,7 +87,6 @@ export default function SupplierLayout({
             </span>
             <div>
               <p className="text-2xl font-semibold leading-none text-[#0d4a38]">Supplier Portal</p>
-              <p className="text-xs font-medium text-[#6f817b]">Brand Partner</p>
             </div>
           </div>
 

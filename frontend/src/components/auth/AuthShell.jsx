@@ -17,9 +17,12 @@ export default function AuthShell({ title, subtitle, children }) {
       </div>
 
       <main className="flex-1 flex flex-col items-center justify-center relative mx-auto w-full px-4 py-10 sm:px-6 md:py-12">
-        <p className="mb-8 text-center text-[34px] font-bold leading-none tracking-tight text-[#0f3c2e] md:mb-7 md:text-[34px]">
-          UrbanFresh
-        </p>
+        <div className="mb-8 flex items-center justify-center gap-1 md:mb-7">
+          <img src="/logo.svg" alt="UrbanFresh logo" className="h-10 w-10 -mr-1" />
+          <p className="text-[34px] font-bold leading-none tracking-tight text-[#0f3c2e]">
+            UrbanFresh
+          </p>
+        </div>
 
         <section className="mx-auto w-full max-w-110 rounded-3xl bg-[#eef1ef] px-6 py-8 shadow-[0_18px_35px_rgba(18,62,47,0.08)] md:px-8 md:py-9">
           <header className="mb-7 text-center">

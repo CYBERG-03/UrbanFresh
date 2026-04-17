@@ -223,28 +223,6 @@ export default function SupplierDashboard() {
             )}
           </section>
 
-          <section className="mt-6 overflow-hidden rounded-2xl bg-linear-to-r from-[#164f3d] via-[#164f3d] to-[#102e2a] text-white">
-            <div className="grid items-center gap-4 p-5 md:grid-cols-[1.2fr_1fr] md:p-7">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#a6d8c3]">New Feature</p>
-                <h2 className="mt-2 text-2xl font-bold leading-tight md:text-4xl">Direct-to-Consumer Analytics</h2>
-                <p className="mt-3 max-w-xl text-sm text-[#cfe3d9] md:text-base">
-                  Understand how urban households are consuming your produce with real-time heatmaps and demand forecasting.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => navigate('/supplier/purchase-orders')}
-                  className="mt-5 rounded-full bg-white px-5 py-2 text-sm font-semibold text-[#0d4a38] transition hover:bg-[#ecf4f0]"
-                >
-                  Explore Insights
-                </button>
-              </div>
-              <div className="relative h-44 overflow-hidden rounded-xl border border-white/20 bg-[radial-gradient(circle_at_20%_20%,rgba(167,212,191,0.35),transparent_55%),linear-gradient(135deg,#1f6750,#143c32)] md:h-52">
-                <div className="absolute bottom-4 right-4 h-16 w-24 rounded-md border border-white/20 bg-white/10 backdrop-blur-sm" />
-                <div className="absolute left-4 top-4 h-10 w-20 rounded-md border border-white/20 bg-white/10 backdrop-blur-sm" />
-              </div>
-            </div>
-          </section>
         </>
       )}
     </SupplierLayout>

@@ -31,7 +31,7 @@ export default function ProfilePage() {
         }
 
         if (loyaltyResult.status === 'fulfilled') {
-          setLoyaltyPoints(Number(loyaltyResult.value?.data?.totalPoints || 0));
+          setLoyaltyPoints(Number(loyaltyResult.value?.totalPoints || 0));
         }
       })
       .finally(() => setLoading(false));
@@ -74,15 +74,9 @@ export default function ProfilePage() {
   const aside = (
     <>
       <div className="rounded-2xl bg-[#0d4a38] p-4 text-white shadow-sm">
-        <p className="text-xs uppercase tracking-wide text-[#b6d4c7]">Impact points</p>
+        <p className="text-xs uppercase tracking-wide text-[#b6d4c7]">Loyalty Points</p>
         <p className="mt-1 text-3xl font-semibold">{loyaltyPoints}</p>
-        <p className="mt-1 text-xs text-[#d5e7de]">Keep your account details up to date for faster checkout.</p>
-      </div>
-
-      <div className="rounded-2xl border border-[#e4ebe8] bg-white p-4 shadow-sm">
-        <p className="text-sm font-semibold text-[#163a2f]">Weekly Harvest</p>
-        <p className="mt-2 text-xs text-[#6f817b]">Fresh arrivals and seasonal bundles appear in your store feed every week.</p>
-        <div className="mt-3 rounded-lg bg-[#eef4f1] p-3 text-center text-3xl" aria-hidden="true">🥕</div>
+        <p className="mt-1 text-xs text-[#d5e7de]">Redeem points at checkout for instant discounts.</p>
       </div>
     </>
   );
