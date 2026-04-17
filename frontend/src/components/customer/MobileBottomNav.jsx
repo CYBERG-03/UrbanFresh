@@ -4,7 +4,7 @@ import { FiClipboard, FiShoppingBag, FiShoppingCart, FiUser } from 'react-icons/
 const ITEMS = [
   { key: 'shop', label: 'Shop', to: '/products', Icon: FiShoppingBag },
   { key: 'cart', label: 'Cart', to: '/cart', Icon: FiShoppingCart },
-  { key: 'orders', label: 'Orders', to: '/dashboard', Icon: FiClipboard },
+  { key: 'orders', label: 'Orders', to: '/orders', Icon: FiClipboard },
   { key: 'profile', label: 'Profile', to: '/profile', Icon: FiUser },
 ];
 

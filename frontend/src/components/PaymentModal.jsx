@@ -64,7 +64,7 @@ export default function PaymentModal({ orderId, totalAmount, isOpen, onClose, on
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 backdrop-blur-md bg-transparent flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 space-y-4">
         <div>
           <h2 className="text-xl font-bold text-gray-800">Retry Payment</h2>

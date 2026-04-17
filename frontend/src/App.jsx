@@ -15,6 +15,8 @@ const CartPage = lazy(() => import('./pages/customer/CartPage'));
 const CheckoutPage = lazy(() => import('./pages/customer/CheckoutPage'));
 const CustomerDashboard = lazy(() => import('./pages/customer/CustomerDashboard'));
 const ProfilePage = lazy(() => import('./pages/customer/ProfilePage'));
+const OrderHistoryPage = lazy(() => import('./pages/customer/OrderHistoryPage'));
+const LoyaltyHistoryPage = lazy(() => import('./pages/customer/LoyaltyHistoryPage'));
 const OrderSuccessPage = lazy(() => import('./pages/customer/OrderSuccessPage'));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const AdminProductsPage = lazy(() => import('./pages/admin/AdminProductsPage'));
@@ -89,6 +91,22 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['CUSTOMER']}>
                 <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/orders"
+            element={
+              <ProtectedRoute allowedRoles={['CUSTOMER']}>
+                <OrderHistoryPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/loyalty"
+            element={
+              <ProtectedRoute allowedRoles={['CUSTOMER']}>
+                <LoyaltyHistoryPage />
               </ProtectedRoute>
             }
           />
