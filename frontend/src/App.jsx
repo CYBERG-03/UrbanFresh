@@ -31,6 +31,7 @@ const AdminExpiryPage = lazy(() => import('./pages/admin/AdminExpiryPage'));
 const AdminWasteReportPage = lazy(() => import('./pages/admin/AdminWasteReportPage'));
 const SupplierDashboard = lazy(() => import('./pages/supplier/SupplierDashboard'));
 const SupplierPurchaseOrdersPage = lazy(() => import('./pages/supplier/SupplierPurchaseOrdersPage'));
+const SupplierProfilePage = lazy(() => import('./pages/supplier/SupplierProfilePage'));
 const DeliveryDashboard = lazy(() => import('./pages/delivery/DeliveryDashboard'));
 const DeliveryCurrentOrdersPage = lazy(() => import('./pages/delivery/DeliveryCurrentOrdersPage'));
 const DeliveryOrderHistoryPage = lazy(() => import('./pages/delivery/DeliveryOrderHistoryPage'));
@@ -228,6 +229,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['SUPPLIER']}>
                 <SupplierPurchaseOrdersPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/supplier/profile"
+            element={
+              <ProtectedRoute allowedRoles={['SUPPLIER']}>
+                <SupplierProfilePage />
               </ProtectedRoute>
             }
           />
