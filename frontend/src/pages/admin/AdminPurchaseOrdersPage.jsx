@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import AdminDeliveryLayout from '../../components/admin/delivery/AdminDeliveryLayout';
 import { confirmDeliveryAndStock, getAllPurchaseOrders } from '../../services/adminPurchaseOrderService';
@@ -10,6 +11,9 @@ export default function AdminPurchaseOrdersPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('ALL');
+  const [search, setSearch] = useState('');
+  const [sortField, setSortField] = useState('id');
+  const [sortDir, setSortDir] = useState('desc');
   const [currentPage, setCurrentPage] = useState(1);
 
   const PAGE_SIZE = 4;
@@ -21,6 +25,8 @@ export default function AdminPurchaseOrdersPage() {
   useEffect(() => {
     void loadOrders();
   }, []);
+
+  useEffect(() => { setCurrentPage(1); }, [activeFilter, search]);
 
   const loadOrders = async () => {
     setLoading(true);
@@ -93,9 +99,25 @@ export default function AdminPurchaseOrdersPage() {
   );
 
   const filteredOrders = useMemo(() => {
-    if (activeFilter === 'ALL') return orders;
-    return orders.filter((order) => order.status === activeFilter);
-  }, [activeFilter, orders]);
+    let result = activeFilter === 'ALL' ? [...orders] : orders.filter((o) => o.status === activeFilter);
+    const q = search.toLowerCase();
+    if (q) {
+      result = result.filter(
+        (o) =>
+          `PO-${o.id}`.toLowerCase().includes(q) ||
+          (o.brandName || '').toLowerCase().includes(q) ||
+          (o.items || []).some((item) => item.productName?.toLowerCase().includes(q)),
+      );
+    }
+    result.sort((a, b) => {
+      if (sortField === 'id') return sortDir === 'asc' ? a.id - b.id : b.id - a.id;
+      const av = sortField === 'brand' ? (a.brandName || '') : (a.status || '');
+      const bv = sortField === 'brand' ? (b.brandName || '') : (b.status || '');
+      const cmp = av.localeCompare(bv);
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+    return result;
+  }, [activeFilter, orders, search, sortField, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filteredOrders.length / PAGE_SIZE));
 
@@ -114,6 +136,17 @@ export default function AdminPurchaseOrdersPage() {
         { label: 'Inventory', to: '/admin/inventory' },
         { label: 'Purchase Orders' },
       ]}
+      actions={
+        <Link
+          to="/admin/inventory"
+          className="inline-flex items-center gap-2 rounded-xl border border-[#d4dfdb] bg-white px-4 py-2 text-sm font-semibold text-[#0d4a38] transition hover:bg-[#f1f6f4]"
+        >
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to Inventory
+        </Link>
+      }
     >
       {confirmOrderId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 py-6 backdrop-blur-sm">
@@ -222,16 +255,6 @@ export default function AdminPurchaseOrdersPage() {
       <section className="rounded-2xl border border-[#e4ebe8] bg-white shadow-sm">
         <div className="flex flex-col gap-4 border-b border-[#edf2f0] px-4 py-4 sm:px-5">
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              className="inline-flex items-center gap-2 rounded-xl bg-[#9be7bf] px-3 py-2 text-sm font-semibold text-[#0d4a38]"
-            >
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M6 12h12m-8 6h4" />
-              </svg>
-              Filters
-            </button>
-
             {[
               { key: 'ALL', label: `All POs (${statusCount.ALL})` },
               { key: 'PENDING', label: 'Pending' },
@@ -254,8 +277,36 @@ export default function AdminPurchaseOrdersPage() {
                 {filterItem.label}
               </button>
             ))}
+          </div>
 
-            <span className="ml-auto text-xs text-[#6f817b]">Last updated: Just now</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative min-w-48 flex-1">
+              <svg className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8fa89f]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="8" /><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35" />
+              </svg>
+              <input
+                type="search"
+                placeholder="Search by PO#, brand or item..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-9 w-full rounded-xl border border-[#dce8e3] bg-[#f4f7f6] pl-9 pr-3 text-sm text-[#5f7770] focus:outline-none"
+              />
+            </div>
+            <select
+              value={`${sortField}:${sortDir}`}
+              onChange={(e) => {
+                const [f, d] = e.target.value.split(':');
+                setSortField(f); setSortDir(d); setCurrentPage(1);
+              }}
+              className="h-9 rounded-xl border border-[#dce8e3] bg-[#f4f7f6] px-3 text-sm text-[#5f7770] focus:outline-none"
+            >
+              <option value="id:desc">Newest first</option>
+              <option value="id:asc">Oldest first</option>
+              <option value="brand:asc">Brand A–Z</option>
+              <option value="brand:desc">Brand Z–A</option>
+              <option value="status:asc">Status A–Z</option>
+            </select>
+            <span className="ml-auto text-xs text-[#6f817b]">{filteredOrders.length} order{filteredOrders.length !== 1 ? 's' : ''}</span>
           </div>
         </div>
 
@@ -281,7 +332,7 @@ export default function AdminPurchaseOrdersPage() {
               ) : filteredOrders.length === 0 ? (
                 <tr>
                   <td className="px-4 py-10 text-sm text-[#6f817b] sm:px-5" colSpan={6}>
-                    No purchase orders found.
+                    {orders.length === 0 ? 'No purchase orders found.' : 'No orders match your search or filter.'}
                   </td>
                 </tr>
               ) : (
@@ -328,7 +379,7 @@ export default function AdminPurchaseOrdersPage() {
           {loading ? (
             <p className="rounded-2xl border border-[#e4ebe8] bg-[#f8fbf9] p-4 text-sm text-[#6f817b]">Loading purchase orders...</p>
           ) : filteredOrders.length === 0 ? (
-            <p className="rounded-2xl border border-[#e4ebe8] bg-[#f8fbf9] p-4 text-sm text-[#6f817b]">No purchase orders found.</p>
+            <p className="rounded-2xl border border-[#e4ebe8] bg-[#f8fbf9] p-4 text-sm text-[#6f817b]">{orders.length === 0 ? 'No purchase orders found.' : 'No orders match your search or filter.'}</p>
           ) : (
             pagedOrders.map((order) => (
               <article key={order.id} className="rounded-2xl border border-[#e4ebe8] bg-[#f8fbf9] p-4">
