@@ -10,6 +10,9 @@ export default function AdminPurchaseOrdersPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const PAGE_SIZE = 4;
   const [confirmOrderId, setConfirmOrderId] = useState(null);
   const [confirmOrderItems, setConfirmOrderItems] = useState([]);
   const [batchFormData, setBatchFormData] = useState({});
@@ -76,16 +79,15 @@ export default function AdminPurchaseOrdersPage() {
     }));
   };
 
-  const noticedOrders = useMemo(
-    () => orders.filter((order) => order.status === 'CANCELLED' && order.supplierNotice),
-    [orders]
-  );
-
   const statusCount = useMemo(
     () => ({
       ALL: orders.length,
       PENDING: orders.filter((order) => order.status === 'PENDING').length,
+      ACCEPTED: orders.filter((order) => order.status === 'ACCEPTED').length,
       SHIPPED: orders.filter((order) => order.status === 'SHIPPED').length,
+      DELIVERED: orders.filter((order) => order.status === 'DELIVERED').length,
+      COMPLETED: orders.filter((order) => order.status === 'COMPLETED').length,
+      CANCELLED: orders.filter((order) => order.status === 'CANCELLED').length,
     }),
     [orders]
   );
@@ -94,6 +96,13 @@ export default function AdminPurchaseOrdersPage() {
     if (activeFilter === 'ALL') return orders;
     return orders.filter((order) => order.status === activeFilter);
   }, [activeFilter, orders]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / PAGE_SIZE));
+
+  const pagedOrders = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredOrders.slice(start, start + PAGE_SIZE);
+  }, [filteredOrders, currentPage]);
 
   return (
     <AdminDeliveryLayout
@@ -208,35 +217,7 @@ export default function AdminPurchaseOrdersPage() {
         </div>
       )}
 
-      {noticedOrders.length > 0 && (
-        <section className="rounded-2xl border border-[#f3c8c8] bg-[#fdecee] px-5 py-4">
-          <div className="flex items-start justify-between gap-4">
-            <div className="space-y-1">
-              <p className="text-sm font-semibold text-[#ba2f2f]">Supplier Attention Required</p>
-              <p className="text-xs text-[#8f4040]">
-                {noticedOrders
-                  .slice(0, 3)
-                  .map((order) => `${order.brandName} (${order.id})`)
-                  .join(', ')}
-                {noticedOrders.length > 3 ? ' and others have reported delays.' : ' have reported stock delays.'}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                const firstOrderWithReason =
-                  noticedOrders.find((order) => order.supplierNotice) || noticedOrders[0];
-                setViewReason(
-                  firstOrderWithReason?.supplierNotice || firstOrderWithReason?.rejectionReason || 'No reason provided'
-                );
-              }}
-              className="text-xs font-semibold text-[#a22f2f] underline decoration-[#e5a9a9] underline-offset-2"
-            >
-              View Details
-            </button>
-          </div>
-        </section>
-      )}
+
 
       <section className="rounded-2xl border border-[#e4ebe8] bg-white shadow-sm">
         <div className="flex flex-col gap-4 border-b border-[#edf2f0] px-4 py-4 sm:px-5">
@@ -254,12 +235,16 @@ export default function AdminPurchaseOrdersPage() {
             {[
               { key: 'ALL', label: `All POs (${statusCount.ALL})` },
               { key: 'PENDING', label: 'Pending' },
+              { key: 'ACCEPTED', label: 'Accepted' },
               { key: 'SHIPPED', label: 'Shipped' },
+              { key: 'DELIVERED', label: 'Delivered' },
+              { key: 'COMPLETED', label: 'Completed' },
+              { key: 'CANCELLED', label: 'Cancelled' },
             ].map((filterItem) => (
               <button
                 key={filterItem.key}
                 type="button"
-                onClick={() => setActiveFilter(filterItem.key)}
+                onClick={() => { setActiveFilter(filterItem.key); setCurrentPage(1); }}
                 className={`rounded-xl px-3 py-2 text-xs font-semibold transition ${
                   activeFilter === filterItem.key
                     ? 'bg-[#0d4a38] text-white'
@@ -300,7 +285,7 @@ export default function AdminPurchaseOrdersPage() {
                   </td>
                 </tr>
               ) : (
-                filteredOrders.map((order) => (
+                pagedOrders.map((order) => (
                   <tr key={order.id} className="border-t border-[#edf2f0] align-top">
                     <td className="px-4 py-4 text-sm font-semibold text-[#1d3a31] sm:px-5">PO-{order.id}</td>
                     <td className="px-4 py-4 text-sm font-semibold text-[#1d3a31] sm:px-5">{order.brandName}</td>
@@ -330,9 +315,7 @@ export default function AdminPurchaseOrdersPage() {
                         >
                           Rationale
                         </button>
-                      ) : (
-                        <span className="text-sm font-semibold text-[#18483a]">Track</span>
-                      )}
+                      ) : null}
                     </td>
                   </tr>
                 ))
@@ -347,7 +330,7 @@ export default function AdminPurchaseOrdersPage() {
           ) : filteredOrders.length === 0 ? (
             <p className="rounded-2xl border border-[#e4ebe8] bg-[#f8fbf9] p-4 text-sm text-[#6f817b]">No purchase orders found.</p>
           ) : (
-            filteredOrders.map((order) => (
+            pagedOrders.map((order) => (
               <article key={order.id} className="rounded-2xl border border-[#e4ebe8] bg-[#f8fbf9] p-4">
                 <div className="mb-2 flex items-start justify-between gap-3">
                   <p className="text-sm font-semibold text-[#153a30]">PO-{order.id}</p>
@@ -375,9 +358,7 @@ export default function AdminPurchaseOrdersPage() {
                     >
                       View Rationale
                     </button>
-                  ) : (
-                    <p className="text-xs font-semibold text-[#18483a]">Track</p>
-                  )}
+                  ) : null}
                 </div>
               </article>
             ))
@@ -386,51 +367,41 @@ export default function AdminPurchaseOrdersPage() {
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#edf2f0] px-4 py-4 text-xs text-[#6f817b] sm:px-5">
           <span>
-            Showing 1-{Math.min(filteredOrders.length, 4)} of {filteredOrders.length} purchase orders
+            Showing {filteredOrders.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filteredOrders.length)} of {filteredOrders.length} purchase orders
           </span>
           <div className="flex items-center gap-2">
-            <button className="h-7 w-7 rounded-lg border border-[#d8e2de] text-[#5f7770]" type="button" aria-label="Previous page">
+            <button
+              className="h-7 w-7 rounded-lg border border-[#d8e2de] text-[#5f7770] disabled:opacity-40"
+              type="button"
+              aria-label="Previous page"
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+            >
               &lt;
             </button>
-            <button className="h-7 min-w-7 rounded-lg bg-[#0d4a38] px-2 text-xs font-semibold text-white" type="button">
-              1
-            </button>
-            <button className="h-7 min-w-7 rounded-lg border border-[#d8e2de] px-2 text-xs font-semibold text-[#5f7770]" type="button">
-              2
-            </button>
-            <button className="h-7 w-7 rounded-lg border border-[#d8e2de] text-[#5f7770]" type="button" aria-label="Next page">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                type="button"
+                onClick={() => setCurrentPage(page)}
+                className={`h-7 min-w-7 rounded-lg px-2 text-xs font-semibold ${
+                  page === currentPage
+                    ? 'bg-[#0d4a38] text-white'
+                    : 'border border-[#d8e2de] text-[#5f7770] hover:bg-[#f1f6f4]'
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+            <button
+              className="h-7 w-7 rounded-lg border border-[#d8e2de] text-[#5f7770] disabled:opacity-40"
+              type="button"
+              aria-label="Next page"
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+            >
               &gt;
             </button>
-          </div>
-        </div>
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-[1.05fr_1.8fr]">
-        <div className="rounded-3xl bg-[linear-gradient(145deg,#083a2c,#0d4a38)] p-5 text-white shadow-[0_20px_32px_rgba(7,45,35,0.35)]">
-          <p className="text-sm text-white/80">Total Outflow</p>
-          <p className="mt-2 text-4xl font-bold tracking-tight">Rs. 2,84,500</p>
-          <p className="mt-2 text-xs text-[#b7dccd]">+12.5% from last month</p>
-          <p className="mt-4 text-xs text-[#d2ece2]">3 active suppliers this week</p>
-        </div>
-
-        <div className="rounded-2xl border border-[#e4ebe8] bg-white p-5 shadow-sm">
-          <h3 className="text-2xl font-semibold text-[#153a30]">Inventory Replenishment Status</h3>
-          <p className="text-xs text-[#7a8a85]">Real-time status of items currently in transit</p>
-
-          <div className="mt-4 space-y-4">
-            <ProgressRow label="Perishables" percent={85} />
-            <ProgressRow label="Dairy & Poultry" percent={42} />
-          </div>
-
-          <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-[#5f7770]">
-            <span className="inline-flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-[#0d4a38]" />
-              On Track
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-[#be2f2f]" />
-              Delayed (3)
-            </span>
           </div>
         </div>
       </section>
@@ -453,19 +424,5 @@ function StatusBadge({ status }) {
     <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.07em] ${tones[normalized] || 'bg-[#e8efec] text-[#4f6a62]'}`}>
       {normalized || 'UNKNOWN'}
     </span>
-  );
-}
-
-function ProgressRow({ label, percent }) {
-  return (
-    <div>
-      <div className="mb-1 flex items-center justify-between text-[11px] font-semibold uppercase tracking-widest text-[#61766f]">
-        <span>{label}</span>
-        <span>{percent}%</span>
-      </div>
-      <div className="h-2 rounded-full bg-[#e7efeb]">
-        <div className="h-2 rounded-full bg-[#0d4a38]" style={{ width: `${percent}%` }} />
-      </div>
-    </div>
   );
 }
