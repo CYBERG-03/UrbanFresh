@@ -6,7 +6,7 @@
 | **Sprint** | Sprint 4 |
 | **Report Date** | 17 April 2026 |
 | **QA Engineer** | IT24103439 |
-| **Stories Tested** | 8 |
+| **Stories Tested** | 9 |
 | **Total Defects Found** | 0 (No blocking defects) |
 | **Overall Verdict** | ✅ Conditionally Approved for merge/release |
 
@@ -23,6 +23,10 @@
   - SCRUM-47: targeted backend tests (18 tests, 0 failures)
 - Frontend production validation evidence:
   - SCRUM-48: `npm run build` successful
+- Azure deployment and production hardening evidence:
+  - SCRUM-51: frontend live at `https://www.urbanfresh.live`, backend live at `https://api.urbanfresh.live`, apex redirect (`urbanfresh.live` -> `https://www.urbanfresh.live`) verified
+  - SCRUM-51: SSL validity confirmed for all custom domains, SPA route refresh behavior validated, and production pages load without console errors
+  - SCRUM-51: CI/CD workflows validated for backend and frontend deployment paths (push on `main` and `workflow_dispatch`)
 
 ---
 
@@ -38,6 +42,7 @@
 | SCRUM-45 | In-App Notifications for Order Status Updates | ✅ Approved |
 | SCRUM-47 | Security Audit: Endpoint Access + Validation Pass | ✅ Approved |
 | SCRUM-48 | UI Polish and Bug Bash  | ✅ Approved |
+| SCRUM-51 | Deploy UrbanFresh to Azure | ✅ Approved |
 
 ---
 
@@ -202,6 +207,38 @@
 
 ---
 
+## SCRUM-51 - Deploy UrbanFresh to Azure
+
+### Test Cases
+- [x] Frontend production site `https://www.urbanfresh.live` loads correctly.
+- [x] Backend API endpoint `https://api.urbanfresh.live` responds correctly.
+- [x] Apex domain `urbanfresh.live` redirects to `https://www.urbanfresh.live` with `301`.
+- [x] SSL certificates are valid across `urbanfresh.live`, `www.urbanfresh.live`, and `api.urbanfresh.live`.
+- [x] Production pages load without browser console errors.
+- [x] Azure App Service (`urbanfresh-backend`) contains all required app settings (DB, JWT, Stripe, CORS, upload directory, base URL).
+- [x] `APP_UPLOAD_DIR=/home/uploads` works in production; product images upload and serve successfully.
+- [x] `CORS_ALLOWED_ORIGIN=https://www.urbanfresh.live` allows successful cross-origin API calls.
+- [x] `application-local.properties` is excluded from git and absent in remote repository.
+- [x] `.env.local` is excluded from git and absent in remote repository.
+- [x] Direct navigation to `/products` resolves correctly in production (no SPA routing `404`).
+- [x] Browser refresh on `/cart`, `/orders`, and `/admin/dashboard` resolves correctly.
+- [x] Non-existent routes correctly show error/`404` page.
+- [x] iOS Safari input tapping does not trigger viewport zoom.
+- [x] Auth pages render on mobile without horizontal scroll or blob overflow.
+- [x] Product form modal behavior is responsive: bottom-sheet with internal scroll on mobile and standard modal on desktop.
+- [x] Admin product image uploads persist after refresh and are served from `/home/uploads`.
+- [x] Missing/broken product image URLs render emoji fallback instead of broken image icon.
+- [x] GitHub Actions: backend changes (`backend/**` on `main`) trigger `Deploy Backend to Azure` workflow successfully.
+- [x] GitHub Actions: frontend changes (`frontend/**` on `main`) trigger `Deploy Frontend to Azure Static Web Apps` workflow successfully.
+- [x] Manual `workflow_dispatch` trigger works for both deployment workflows.
+- [x] Loyalty refactor verification passes: `LoyaltyRedemptionServiceTest` (5 tests), over-redemption rejection, and redeemed-points ledger persistence.
+- [x] Postman smoke coverage passes for login JWT issuance, product retrieval with production `imageUrl`, order creation with loyalty redemption, protected endpoint `401` behavior, and production CORS success.
+- [x] Build verification passes: backend `mvn clean package -DskipTests` and frontend `npm run build` with production API base URL.
+
+**Verdict:** ✅ Approved and ready to merge into `develop`.
+
+---
+
 ## Defect and Risk Summary
 
 ### Defects
@@ -217,6 +254,6 @@
 
 ## Final Sprint 4 QA Verdict
 
-Sprint 4 scope is **QA approved** with no blocking defects and strong test evidence across API contracts, RBAC, pricing/loyalty correctness, expiry/waste analytics, notifications, recommendations, and frontend redesign stability.
+Sprint 4 scope is **QA approved** with no blocking defects and strong test evidence across API contracts, RBAC, pricing/loyalty correctness, expiry/waste analytics, notifications, recommendations, frontend redesign stability, and production Azure deployment readiness.
 
 **Release Recommendation:** ✅ Proceed to merge/release with the two follow-up test actions tracked as non-blocking hardening tasks.
