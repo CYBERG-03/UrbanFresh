@@ -149,6 +149,41 @@ export default function CustomerDashboard() {
           </section>
         )}
 
+        {recommendations.length > 0 && (
+          <section className="rounded-2xl border border-[#e4ebe8] bg-white p-5 shadow-sm md:p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-[#163a2f]">Buy Again</h3>
+              <Link to="/products" className="text-sm font-medium text-[#2f6550] hover:text-[#0d4a38]">Browse all</Link>
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              {recommendations.slice(0, 4).map((rec) => (
+                <article key={rec.productId} className="rounded-xl border border-[#e8eeeb] bg-[#fbfdfc] p-3">
+                  <div className="flex h-20 items-center justify-center overflow-hidden rounded-lg bg-[#eef4f1]">
+                    {rec.imageUrl ? (
+                      <img
+                        src={rec.imageUrl}
+                        alt={rec.name}
+                        className="h-full w-full object-cover"
+                        onError={(event) => { event.currentTarget.style.display = 'none'; }}
+                      />
+                    ) : (
+                      <span className="text-2xl" aria-hidden="true">🥬</span>
+                    )}
+                  </div>
+                  <p className="mt-2 line-clamp-2 text-xs font-medium text-[#355f4d]">{rec.name}</p>
+                  <p className="mt-1 text-sm font-semibold text-[#163a2f]">{formatAmount(rec.price)}</p>
+                  <button
+                    onClick={() => handleAddRecommended(rec.productId, rec.name)}
+                    className="mt-2 w-full rounded-lg bg-[#0d4a38] px-2 py-1.5 text-xs font-medium text-white"
+                  >
+                    Add to cart
+                  </button>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
+
         <section className="rounded-2xl border border-[#e4ebe8] bg-white p-5 shadow-sm md:p-6">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="text-lg font-semibold text-[#163a2f]">Recent Orders</h3>
@@ -179,40 +214,6 @@ export default function CustomerDashboard() {
             </div>
           )}
         </section>
-
-        {recommendations.length > 0 && (
-          <section className="rounded-2xl border border-[#e4ebe8] bg-white p-5 shadow-sm md:p-6">
-            <h3 className="text-lg font-semibold text-[#163a2f]">Buy Again</h3>
-            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-              {recommendations.slice(0, 4).map((rec) => (
-                <article key={rec.productId} className="rounded-xl border border-[#e8eeeb] bg-[#fbfdfc] p-3">
-                  <div className="flex h-20 items-center justify-center overflow-hidden rounded-lg bg-[#eef4f1]">
-                    {rec.imageUrl ? (
-                      <img
-                        src={rec.imageUrl}
-                        alt={rec.name}
-                        className="h-full w-full object-cover"
-                        onError={(event) => {
-                          event.currentTarget.style.display = 'none';
-                        }}
-                      />
-                    ) : (
-                      <span className="text-2xl" aria-hidden="true">🥬</span>
-                    )}
-                  </div>
-                  <p className="mt-2 line-clamp-2 text-xs font-medium text-[#355f4d]">{rec.name}</p>
-                  <p className="mt-1 text-sm font-semibold text-[#163a2f]">{formatAmount(rec.price)}</p>
-                  <button
-                    onClick={() => handleAddRecommended(rec.productId, rec.name)}
-                    className="mt-2 w-full rounded-lg bg-[#0d4a38] px-2 py-1.5 text-xs font-medium text-white"
-                  >
-                    Add to cart
-                  </button>
-                </article>
-              ))}
-            </div>
-          </section>
-        )}
       </CustomerAccountLayout>
 
       {notificationsOpen && (
