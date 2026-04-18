@@ -89,59 +89,9 @@ public class LoyaltyServiceImpl implements LoyaltyService {
     }
 
     /**
-     * Validates and deducts loyalty points from the customer's ledger.
-     * Uses a pessimistic write lock to prevent concurrent double-redemption.
-     *
-     * Rules:
-     *  - Customer must have a ledger with sufficient points.
-     *  - The computed discount (pointsToRedeem × Rs. 5) must not exceed the order total.
-     *
-     * @param customer       the customer entity whose ledger is debited
-     * @param pointsToRedeem the number of points to apply
-     * @param orderTotal     the pre-discount order total; guards against over-discounting
-     * @return the discount amount in LKR
-     */
-    /**
-     * @deprecated Use {@link #validatePointsRedemption} at order placement and
-     * {@link #deductRedeemedPoints} after payment confirmation instead.
-     * This method deducts the customer's loyalty balance immediately — before payment
-     * is confirmed — which can permanently burn points for an order that is never paid.
-     */
-    @Deprecated(forRemoval = true)
-    @Override
-    @Transactional
-    public BigDecimal redeemPoints(User customer, int pointsToRedeem, BigDecimal orderTotal) {
-        LoyaltyPoints ledger = loyaltyPointsRepository
-                .findByCustomerIdWithLock(customer.getId())
-                .orElseThrow(() -> new InsufficientLoyaltyPointsException(
-                        "You have no loyalty points available to redeem."));
-
-        int available = ledger.getTotalPoints();
-        if (pointsToRedeem > available) {
-            throw new InsufficientLoyaltyPointsException(
-                    "Insufficient loyalty points. Available: " + available
-                    + ", requested: " + pointsToRedeem + ".");
-        }
-
-        BigDecimal discount = BigDecimal.valueOf((long) pointsToRedeem * LKR_PER_REDEMPTION_POINT);
-        if (discount.compareTo(orderTotal) > 0) {
-            int maxRedeemable = orderTotal
-                    .divide(BigDecimal.valueOf(LKR_PER_REDEMPTION_POINT), 0, RoundingMode.FLOOR)
-                    .intValue();
-            throw new InsufficientLoyaltyPointsException(
-                    "Redemption discount of Rs. " + discount.toPlainString()
-                    + " exceeds the order total. Maximum redeemable: " + maxRedeemable + " points.");
-        }
-
-        ledger.setRedeemedPoints(ledger.getRedeemedPoints() + pointsToRedeem);
-        loyaltyPointsRepository.save(ledger);
-        return discount;
-    }
-
-    /**
      * Validates a redemption request without touching the ledger.
-     * Performs the same balance and max-discount checks as redeemPoints, but returns
-     * the discount amount without updating redeemedPoints.
+     * Validates balance and max-discount checks, returns the discount amount
+     * without updating redeemedPoints.
      * Called at order placement so the discount is locked into the order total immediately.
      */
     @Override

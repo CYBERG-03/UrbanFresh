@@ -31,28 +31,6 @@ public interface LoyaltyService {
     void awardPoints(User customer, BigDecimal orderTotal);
 
     /**
-     * Redeem loyalty points for a discount on an order.
-     * Conversion rule: 1 point = Rs. 5 discount.
-     * Uses a pessimistic write lock to prevent concurrent double-redemption.
-     *
-     * <p><b>Deprecated:</b> this method deducts points immediately at order placement,
-     * before payment confirmation. Use the two-phase approach instead:
-     * call {@link #validatePointsRedemption(User, int, BigDecimal)} at order placement
-     * (no ledger change) and {@link #deductRedeemedPoints(User, int)} after the Stripe
-     * payment is confirmed. Keeping this public risks burning a customer's balance for
-     * an order that is never paid.
-     *
-     * @param customer       the customer redeeming points
-     * @param pointsToRedeem number of points the customer wants to apply (must be > 0)
-     * @param orderTotal     the order total before discount; discount cannot exceed this
-     * @return the discount amount in LKR to subtract from the order total
-     * @throws InsufficientLoyaltyPointsException if balance is insufficient or discount exceeds order total
-     * @deprecated Use {@link #validatePointsRedemption} + {@link #deductRedeemedPoints} instead.
-     */
-    @Deprecated(forRemoval = true)
-    BigDecimal redeemPoints(User customer, int pointsToRedeem, BigDecimal orderTotal);
-
-    /**
      * Validates that the customer has enough loyalty points to redeem and that the
      * computed discount does not exceed the order total — WITHOUT deducting from the ledger.
      * Call this at order placement so the amount is baked into the order total immediately,

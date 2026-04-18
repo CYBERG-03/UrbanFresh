@@ -1,18 +1,17 @@
 package com.urbanfresh.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import java.math.BigDecimal;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.urbanfresh.exception.InsufficientLoyaltyPointsException;
@@ -27,7 +26,7 @@ import com.urbanfresh.service.impl.LoyaltyServiceImpl;
  * Test Layer – Verifies the loyalty points redemption logic introduced in SCRUM-40.
  * Covers all acceptance-criteria paths:
  *   1. Valid redemption applies the correct discount (1 pt = Rs. 5)
- *   2. Valid redemption increments redeemedPoints on the ledger
+ *   2. Valid redemption increments redeemedPoints on the ledger after payment
  *   3. Over-redemption (more points than balance) is rejected
  *   4. Redemption whose discount exceeds the order total is rejected
  *   5. Customer with no ledger at all is rejected
@@ -51,20 +50,20 @@ class LoyaltyRedemptionServiceTest {
     // ── Test 1: Correct discount amount ───────────────────────────────────────
 
     /**
-     * Redeeming 10 points on a Rs. 5000 order must return Rs. 50 discount (10 × 5).
+     * Validating 10 points on a Rs. 5000 order must return Rs. 50 discount (10 × 5).
      */
     @Test
-    void redeemPoints_returnsCorrectDiscount_forValidRedemption() {
+    void validatePointsRedemption_returnsCorrectDiscount_forValidRedemption() {
         LoyaltyPoints ledger = LoyaltyPoints.builder()
                 .customer(customer)
                 .earnedPoints(20)    // totalPoints = 20 - 0 = 20
                 .redeemedPoints(0)
                 .build();
 
-        when(loyaltyPointsRepository.findByCustomerIdWithLock(customer.getId()))
+        when(loyaltyPointsRepository.findByCustomerId(customer.getId()))
                 .thenReturn(Optional.of(ledger));
 
-        BigDecimal discount = loyaltyService.redeemPoints(customer, 10, BigDecimal.valueOf(5000));
+        BigDecimal discount = loyaltyService.validatePointsRedemption(customer, 10, BigDecimal.valueOf(5000));
 
         assertThat(discount).isEqualByComparingTo(BigDecimal.valueOf(50));
     }
@@ -72,11 +71,11 @@ class LoyaltyRedemptionServiceTest {
     // ── Test 2: Ledger redeemedPoints incremented ─────────────────────────────
 
     /**
-     * After a valid redemption the ledger's redeemedPoints must increase by pointsToRedeem
-     * and the updated ledger must be saved.
+     * After payment confirmation, deductRedeemedPoints must increase redeemedPoints
+     * by pointsToDeduct and save the updated ledger.
      */
     @Test
-    void redeemPoints_incrementsRedeemedPointsAndSavesLedger() {
+    void deductRedeemedPoints_incrementsRedeemedPointsAndSavesLedger() {
         LoyaltyPoints ledger = LoyaltyPoints.builder()
                 .customer(customer)
                 .earnedPoints(30)
@@ -86,7 +85,7 @@ class LoyaltyRedemptionServiceTest {
         when(loyaltyPointsRepository.findByCustomerIdWithLock(customer.getId()))
                 .thenReturn(Optional.of(ledger));
 
-        loyaltyService.redeemPoints(customer, 10, BigDecimal.valueOf(5000));
+        loyaltyService.deductRedeemedPoints(customer, 10);
 
         ArgumentCaptor<LoyaltyPoints> captor = ArgumentCaptor.forClass(LoyaltyPoints.class);
         verify(loyaltyPointsRepository).save(captor.capture());
@@ -104,18 +103,18 @@ class LoyaltyRedemptionServiceTest {
      * InsufficientLoyaltyPointsException — the ledger must not be saved.
      */
     @Test
-    void redeemPoints_throwsException_whenRequestedExceedsBalance() {
+    void validatePointsRedemption_throwsException_whenRequestedExceedsBalance() {
         LoyaltyPoints ledger = LoyaltyPoints.builder()
                 .customer(customer)
                 .earnedPoints(10)
                 .redeemedPoints(5)   // totalPoints = 10 - 5 = 5
                 .build();
 
-        when(loyaltyPointsRepository.findByCustomerIdWithLock(customer.getId()))
+        when(loyaltyPointsRepository.findByCustomerId(customer.getId()))
                 .thenReturn(Optional.of(ledger));
 
         assertThatThrownBy(() ->
-                loyaltyService.redeemPoints(customer, 6, BigDecimal.valueOf(5000)))
+                loyaltyService.validatePointsRedemption(customer, 6, BigDecimal.valueOf(5000)))
                 .isInstanceOf(InsufficientLoyaltyPointsException.class)
                 .hasMessageContaining("Available: 5")
                 .hasMessageContaining("requested: 6");
@@ -128,19 +127,19 @@ class LoyaltyRedemptionServiceTest {
      * Prevents a customer from getting more discount than the order is worth.
      */
     @Test
-    void redeemPoints_throwsException_whenDiscountExceedsOrderTotal() {
+    void validatePointsRedemption_throwsException_whenDiscountExceedsOrderTotal() {
         LoyaltyPoints ledger = LoyaltyPoints.builder()
                 .customer(customer)
                 .earnedPoints(100)
                 .redeemedPoints(0)   // totalPoints = 100; potential discount = Rs. 500
                 .build();
 
-        when(loyaltyPointsRepository.findByCustomerIdWithLock(customer.getId()))
+        when(loyaltyPointsRepository.findByCustomerId(customer.getId()))
                 .thenReturn(Optional.of(ledger));
 
         // orderTotal is only Rs. 200, but 50 pts × 5 = Rs. 250 discount
         assertThatThrownBy(() ->
-                loyaltyService.redeemPoints(customer, 50, BigDecimal.valueOf(200)))
+                loyaltyService.validatePointsRedemption(customer, 50, BigDecimal.valueOf(200)))
                 .isInstanceOf(InsufficientLoyaltyPointsException.class)
                 .hasMessageContaining("exceeds the order total")
                 .hasMessageContaining("Maximum redeemable: 40");
@@ -153,12 +152,12 @@ class LoyaltyRedemptionServiceTest {
      * Attempting to redeem must throw InsufficientLoyaltyPointsException.
      */
     @Test
-    void redeemPoints_throwsException_whenNoLedgerExists() {
-        when(loyaltyPointsRepository.findByCustomerIdWithLock(customer.getId()))
+    void validatePointsRedemption_throwsException_whenNoLedgerExists() {
+        when(loyaltyPointsRepository.findByCustomerId(customer.getId()))
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() ->
-                loyaltyService.redeemPoints(customer, 5, BigDecimal.valueOf(1000)))
+                loyaltyService.validatePointsRedemption(customer, 5, BigDecimal.valueOf(1000)))
                 .isInstanceOf(InsufficientLoyaltyPointsException.class)
                 .hasMessageContaining("no loyalty points available");
     }
